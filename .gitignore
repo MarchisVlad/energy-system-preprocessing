@@ -4,3 +4,6 @@ presolvers/papilo
 
 # Ignore solvers
 solvers/PIPS-IPMpp
+
+# Ignore licensed utils
+solvers/utils/PIPS-IPMpp
