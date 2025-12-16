@@ -6,4 +6,4 @@ presolvers/papilo
 solvers/PIPS-IPMpp
 
 # Ignore licensed utils
-solvers/utils/PIPS-IPMpp
+solvers/utils/PIPS-IPMpp/ma27-1.0.0.tar.gz
