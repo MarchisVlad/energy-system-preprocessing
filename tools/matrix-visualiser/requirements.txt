@@ -1,0 +1,3 @@
+python-mip
+scipy
+matplotlib
