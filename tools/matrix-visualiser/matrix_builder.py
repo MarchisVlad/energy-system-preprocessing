@@ -75,7 +75,7 @@ def plot_sparsity(A, figsize=(6,6), markersize=1):
 
 # --- Example usage ---
 if __name__ == '__main__':
-    model, A = read_model_and_get_matrix('my_problem.mps')
+    model, A = read_model_and_get_matrix('/Users/marchisvlad/energy-system-preprocessing/models/mps/MIPLIB/10teams.mps')
     # if you want to canonicalize: gather constraint senses from model if available
     # Many libraries expose constraint senses by row; python-mip doesn't provide a direct list API
     # in the same shape, so canonicalize=False by default unless you collect senses separately.
