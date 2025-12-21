@@ -269,19 +269,28 @@ class ConstraintMatrixAnalyser:
         
         return sign_strings
     
-    def full_report(self, output_prefix='matrix_analysis'):
+    def full_report(self, save_figs=False, output_prefix='matrix_analysis'):
         """Generate comprehensive analysis report with all plots"""
         self.print_statistics()
+
+        figs = []
         
         # Generate all plots
         fig1, _ = self.plot_sparsity_pattern(max_display=(500, 500))
-        fig1.savefig(f'{output_prefix}_sparsity.png', dpi=150, bbox_inches='tight')
+        figs.append(fig1)
+        # fig1.savefig(f'{output_prefix}_sparsity.png', dpi=150, bbox_inches='tight')
         
         fig2, _ = self.plot_coefficient_heatmap(max_display=(200, 200))
-        fig2.savefig(f'{output_prefix}_heatmap.png', dpi=150, bbox_inches='tight')
+        figs.append(fig2)
+        # fig2.savefig(f'{output_prefix}_heatmap.png', dpi=150, bbox_inches='tight')
         
         fig3, _ = self.plot_row_col_histograms()
-        fig3.savefig(f'{output_prefix}_histograms.png', dpi=150, bbox_inches='tight')
+        figs.append(fig3)
+        # fig3.savefig(f'{output_prefix}_histograms.png', dpi=150, bbox_inches='tight')
+
+        if(save_figs):
+            for i, fig in enumerate(figs):
+                fig.savefig(f'{output_prefix}_{i}.png', dpi = 150, bbox_inches ='tight')
         
         print(f"\nPlots saved with prefix: {output_prefix}")
         plt.show()
