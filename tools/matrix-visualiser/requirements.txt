@@ -1,3 +1,5 @@
 mip
 scipy
 matplotlib
+networkx
+scikit-learn
