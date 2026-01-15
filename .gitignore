@@ -1,11 +1,14 @@
 # Ignore presolvers
-presolvers/papilo
+src/presolvers/papilo
 
 # Ignore solvers
-solvers/PIPS-IPMpp
+src/solvers/PIPS-IPMpp
 
 # Ignore licensed utils
-solvers/utils/PIPS-IPMpp/ma27-1.0.0.tar.gz
+src/solvers/utils/PIPS-IPMpp/ma27-1.0.0.tar.gz
 
 # Ignore python caches
-tools/matrix-visualiser/__pycache__
+src/tools/matrix-visualiser/__pycache__
+
+# Ignore model utils
+models/utils/detection-annotation
