@@ -467,6 +467,23 @@ class ConstraintMatrixAnalyser:
                 # Assign to most common block
                 block_counts = np.bincount(row_partition[rows], minlength=n_blocks)
                 col_partition[col] = block_counts.argmax()
+            else:
+                # For empty columns, assign to block 0 (or distribute evenly)
+                col_partition[col] = col % n_blocks  # Distribute empty columns
+        
+        # Ensure each block has at least one column if possible
+        for b in range(n_blocks):
+            if not np.any(col_partition == b):
+                # Find columns that touch this block's rows
+                block_rows = np.where(row_partition == b)[0]
+                if len(block_rows) > 0:
+                    for row in block_rows:
+                        row_data = self.A.getrow(row)
+                        cols = row_data.nonzero()[1]
+                        if len(cols) > 0:
+                            # Reassign first column to this block
+                            col_partition[cols[0]] = b
+                            break
         
         return col_partition
     
