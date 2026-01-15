@@ -1,8 +1,11 @@
 #ifndef SCORE_HPP
 #define SCORE_HPP
 
-
 #include <vector>
+#include <map>
+#include <string>
+#include <algorithm>
+
 
 enum class INPUTBLOCKS {
     VARIABLES = 0,
@@ -33,7 +36,6 @@ protected:
     double _compute_score() override;
 };
 
-// Forward declarations for model structures
 struct ModelDump {
     std::map<std::string, std::vector<int>> records;
     std::map<std::string, std::vector<std::vector<std::string>>> A_records;
