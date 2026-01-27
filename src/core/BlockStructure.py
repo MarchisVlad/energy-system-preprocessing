@@ -15,22 +15,15 @@ class Block:
 @dataclass
 class BlockStructure:
     """
-    Algorithm-agnostic block structure with metadata.
+    Block structure with metadata.
     """
-
-    # ---- Geometry ----
     blocks: List[Block]
     count: int
 
     row_permutation: Optional[np.ndarray] = None
     col_permutation: Optional[np.ndarray] = None
 
-    # ---- Metadata (NON-STRUCTURAL) ----
-    method: Optional[str] = None                    # e.g. "rcm", "spectral"
-    detected_patterns: List[str] = field(default_factory=list)
-    metadata: Dict[str, Any] = field(default_factory=dict)
-
-    # ---- Geometry helpers ----
+    # Geometry helpers
     def boundaries(self):
         """
         Rectangular boundaries for plotting.

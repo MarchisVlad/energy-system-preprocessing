@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 import scipy.sparse as sp
+import src.core
 
 class DetectionAlgorithm(ABC):
     """
