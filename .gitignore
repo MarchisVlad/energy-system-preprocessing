@@ -11,4 +11,4 @@ src/solvers/utils/PIPS-IPMpp/ma27-1.0.0.tar.gz
 *__pycache__
 
 # Ignore model utils
-models/utils/detection-annotation
+src/utils/detection_annotation

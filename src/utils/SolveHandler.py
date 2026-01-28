@@ -40,9 +40,9 @@ def solve_pips(m: Model, **kwargs):
 class SolveHandler:
 
     @staticmethod
-    def solve(m: Model, s: Solver = Solver.PIPS, **kwargs):
-        match s:
+    def solve(model: Model, solver: Solver = Solver.PIPS, **kwargs):
+        match solver:
             case Solver.PIPS:
-                return solve_pips(m, **kwargs)
+                return solve_pips(model, **kwargs)
             case _:
                 raise NotImplementedError(f"Solver {s} not implemented")
