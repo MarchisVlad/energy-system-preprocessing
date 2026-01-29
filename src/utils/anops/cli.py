@@ -1,7 +1,7 @@
 import typer
 from typing_extensions import Annotated
 
-from anops import __version__, identify_structure_and_annotate_gdx, plot_gdx
+from . import __version__, identify_structure_and_annotate_gdx, plot_gdx
 
 
 def version_callback(value: bool):

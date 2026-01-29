@@ -9,6 +9,7 @@ src/solvers/utils/PIPS-IPMpp/ma27-1.0.0.tar.gz
 
 # Ignore python caches
 *__pycache__
+*ipynb_checkpoints
 
 # Ignore model utils
 src/utils/detection_annotation

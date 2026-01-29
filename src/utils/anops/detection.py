@@ -2,8 +2,8 @@ import gams.transfer as gt
 import numpy as np
 import networkx as nx
 
-from anops.defs import INPUTBLOCKS
-from anops.score import WhiteScore, PipsScore
+from .defs import INPUTBLOCKS
+from .score import WhiteScore, PipsScore
 
 
 def domains_list(ve, m, withalias=True):

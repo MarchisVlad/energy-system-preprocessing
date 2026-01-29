@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 import scipy.sparse as sp
-import src.core
+from ..core.BlockStructure import BlockStructure
 
 class DetectionAlgorithm(ABC):
     """

@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 
 
-from anops.detection import frequency_detection, equation_blocks_from_variables
+from .detection import frequency_detection, equation_blocks_from_variables
 
 os.environ["GDXCOMPRESS"] = "1"
 

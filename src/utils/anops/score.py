@@ -1,6 +1,6 @@
 import numpy as np
 
-from anops.defs import INPUTBLOCKS
+from .defs import INPUTBLOCKS
 
 
 class StructureScore:

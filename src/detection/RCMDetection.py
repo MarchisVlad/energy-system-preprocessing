@@ -1,3 +1,6 @@
+from .DetectionAlgorithm import DetectionAlgorithm
+from ..core.BlockStructure import BlockStructure
+
 class RCMDetection(DetectionAlgorithm):
     name = "rcm"
 
