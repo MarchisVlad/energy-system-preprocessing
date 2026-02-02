@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
-import scipy.sparse as sp
 from ..core.BlockStructure import BlockStructure
+from src.core.Model import Model
+
 
 class DetectionAlgorithm(ABC):
     """
@@ -10,7 +11,7 @@ class DetectionAlgorithm(ABC):
     name: str
 
     @abstractmethod
-    def detect(self, A: sp.spmatrix) -> BlockStructure:
+    def detect(self, model: Model) -> BlockStructure:
         """
         Analyze matrix A and return a BlockStructure.
         """

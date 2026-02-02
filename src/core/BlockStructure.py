@@ -2,14 +2,15 @@ from dataclasses import dataclass, field
 from typing import List, Tuple, Optional, Dict, Any
 import numpy as np
 
+
 @dataclass(frozen=True)
 class Block:
     """
     Pure geometric block representation.
     """
-    vertices: List[Tuple[int, int]]           # polygon vertices (row, col)
-    row_range: Tuple[int, int]                # (start, end)
-    col_range: Tuple[int, int]                # (start, end)
+    vertices: List[Tuple[int, int]]  # polygon vertices (row, col)
+    row_range: Tuple[int, int]  # (start, end)
+    col_range: Tuple[int, int]  # (start, end)
 
 
 @dataclass

@@ -2,6 +2,7 @@ from .DetectionAlgorithm import DetectionAlgorithm
 from ..core.BlockStructure import BlockStructure
 from sklearn import SpectralClustering
 
+
 class SpectralDetection(DetectionAlgorithm):
     name = "spectral"
 
@@ -11,16 +12,11 @@ class SpectralDetection(DetectionAlgorithm):
     def detect(self, A):
         similarity = (A @ A.T).astype(float).toarray()
 
-        clustering = SpectralClustering(
-            n_clusters=self.n_blocks,
-            affinity="precomputed",
-            random_state=42
-        )
+        clustering = SpectralClustering(n_clusters=self.n_blocks,
+                                        affinity="precomputed",
+                                        random_state=42)
 
         labels = clustering.fit_predict(similarity)
         blocks = self._blocks_from_labels(A, labels)
 
-        return BlockStructure(
-            blocks=blocks,
-            count=len(blocks)
-        )
+        return BlockStructure(blocks=blocks, count=len(blocks))
