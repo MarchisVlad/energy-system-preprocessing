@@ -1,7 +1,8 @@
 import numpy as np
+import scipy.sparse as sp
 from scipy.sparse.csgraph import reverse_cuthill_mckee
 
-from ..core.BlockStructure import BlockStructure
+from ..core.BlockStructure import Block, BlockStructure
 from ..core.Model import Model
 from .DetectionAlgorithm import DetectionAlgorithm
 
@@ -9,12 +10,11 @@ from .DetectionAlgorithm import DetectionAlgorithm
 class RCMDetection(DetectionAlgorithm):
     name = "rcm"
 
-    def __init__(self, model):
-        super().__init__(model)
+    def __init__(self, A: sp.coo_matrix):
+        super().__init__(A)
 
-    def detect(self) -> BlockStructure:
+    def detect(self, **kwargs) -> BlockStructure:
         """Reverse Cuthill-McKee reordering"""
-
         # Build symmetric structure matrix
         AT = self.A.T
         structure = self.A @ AT
@@ -34,15 +34,17 @@ class RCMDetection(DetectionAlgorithm):
                                                      col_perm)
 
         return BlockStructure(blocks=blocks,
-                              row_perm=row_perm,
-                              col_perm=col_perm)
+                              A=A_reordered,
+                              count=len(blocks) if blocks else 0,
+                              row_permutation=row_perm,
+                              col_permutation=col_perm)
 
     def _get_col_ordering(self, row_perm):
         """Get column ordering that follows row ordering"""
         # Simple heuristic: order columns by first row they appear in
         A_reordered = self.A[row_perm]
-
         col_first_row = np.zeros(self.n_cols, dtype=int)
+
         for col in range(self.n_cols):
             col_data = A_reordered.getcol(col)
             rows = col_data.nonzero()[0]
@@ -59,8 +61,8 @@ class RCMDetection(DetectionAlgorithm):
         # Use a simple sliding window approach
         blocks = []
         block_size = max(10, min(100, self.n_rows // 10))
-
         i = 0
+
         while i < self.n_rows:
             # Find extent of nonzeros in this block
             block_rows = slice(i, min(i + block_size, self.n_rows))
@@ -69,17 +71,24 @@ class RCMDetection(DetectionAlgorithm):
             if block_data.nnz > 0:
                 cols_in_block = block_data.nonzero()[1]
                 if len(cols_in_block) > 0:
-                    col_start = cols_in_block.min()
-                    col_end = cols_in_block.max() + 1
+                    col_start = int(cols_in_block.min())
+                    col_end = int(cols_in_block.max() + 1)
+                    row_start = i
+                    row_end = min(i + block_size, self.n_rows)
 
-                    blocks.append({
-                        'row_start': i,
-                        'row_end': min(i + block_size, self.n_rows),
-                        'col_start': int(col_start),
-                        'col_end': int(col_end),
-                        'block_id': len(blocks)
-                    })
+                    # Create rectangular block with vertices (clockwise from top-left)
+                    vertices = [
+                        (row_start, col_start),  # top-left
+                        (row_start, col_end),  # top-right
+                        (row_end, col_end),  # bottom-right
+                        (row_end, col_start)  # bottom-left
+                    ]
+
+                    block = Block(vertices=vertices,
+                                  row_range=(row_start, row_end),
+                                  col_range=(col_start, col_end))
+                    blocks.append(block)
 
             i += block_size
 
-        return blocks if len(blocks) > 1 else None
+        return blocks if len(blocks) > 1 else []

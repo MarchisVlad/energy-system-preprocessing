@@ -1,3 +1,5 @@
+import scipy.sparse as sp
+
 from ..core.BlockStructure import BlockStructure
 from .DetectionAlgorithm import DetectionAlgorithm
 
@@ -5,10 +7,10 @@ from .DetectionAlgorithm import DetectionAlgorithm
 class PatternDetection(DetectionAlgorithm):
     name = "pattern"
 
-    def __init__(self, model):
-        super().__init__(model)
+    def __init__(self, A: sp.coo_matrix):
+        super().__init__(A)
 
-    def detect(self):
+    def detect(self, **kwargs):
         row_perm, col_perm, blocks = self._run_rcm(self.A)
 
         return BlockStructure(blocks=blocks,

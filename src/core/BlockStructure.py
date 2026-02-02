@@ -2,6 +2,7 @@ from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
+import scipy.sparse as sp
 
 
 @dataclass(frozen=True)
@@ -22,6 +23,7 @@ class BlockStructure:
     blocks: List[Block]
     count: int
 
+    A: sp.coo_matrix = None
     row_permutation: Optional[np.ndarray] = None
     col_permutation: Optional[np.ndarray] = None
 

@@ -2,6 +2,8 @@ from PyQt6.QtWidgets import (QComboBox, QFileDialog, QGroupBox, QHBoxLayout,
                              QLabel, QPushButton, QTableWidget, QVBoxLayout,
                              QWidget)
 
+from src.utils.DetectionHandler import DetectionHandler
+
 from ..widgets.block_widget import BlockMatrixWidget
 
 
@@ -45,9 +47,10 @@ class MatrixPanel(QWidget):
 
         detection_info_layout.addWidget(QLabel("Algorithm"))
         self.detection_technique = QComboBox()
-        for technique in ['rcm', 'spectral']:
+        for technique in ['None', 'rcm', 'spectral']:
             self.detection_technique.addItem(technique)
 
+        self.detection_technique.currentIndexChanged.connect(self.update_blocks)
         detection_info_layout.addWidget(self.detection_technique)
 
         info_layout.addWidget(detection_info)
@@ -87,6 +90,8 @@ class MatrixPanel(QWidget):
     def update_matrix(self):
         """Update the matrix display with new information"""
         current_state = self.app.model_history.get_current_state()
+        self.block_matrix_info.clear_blocks()
+
         print(self.app.model_history)
         if current_state:
             _, A = current_state
@@ -101,6 +106,27 @@ class MatrixPanel(QWidget):
         else:
             raise RuntimeError(
                 "Tried updating matrix display without any matrix information.")
+
+    def update_blocks(self, index):
+        detection_method = self.detection_technique.currentText()
+
+        if detection_method == 'None':
+            self.block_matrix_info.clear_blocks()
+            return
+
+        current_state = self.app.model_history.get_current_state()
+        print(self.app.model_history)
+        if current_state:
+            _, A = current_state
+
+            blocks = DetectionHandler().detect_block_structure(
+                A, detection_method)
+
+            self.block_matrix_info.highlight_blocks(blocks)
+
+        else:
+            raise RuntimeError(
+                "Tried updating blocks display without any matrix information.")
 
     def export_matrix(self):
         mh = self.app.model_history

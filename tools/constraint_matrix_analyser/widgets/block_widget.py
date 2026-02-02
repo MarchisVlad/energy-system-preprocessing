@@ -3,7 +3,8 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QBrush, QColor
 from PyQt6.QtWidgets import (QGraphicsRectItem, QHBoxLayout, QLabel, QScrollBar,
                              QVBoxLayout, QWidget)
-from pyqtgraph.Qt import QtCore, QtGui
+from pyqtgraph.Qt import QtCore, QtGui, QtWidgets
+from pyqtgraph.Qt.QtWidgets import QToolTip
 
 from src.core.BlockStructure import BlockStructure
 
@@ -260,23 +261,60 @@ class BlockMatrixWidget(QWidget):
                      f"View: Rows [{y_min}–{y_max}], Cols [{x_min}–{x_max}]")
         self.info_label.setText(info_text)
 
-    def highlight_blocks(self, blocks: BlockStructure):
-        """Highlight blocks with interactive hover info"""
-        # Remove previous overlays
+    def clear_blocks(self):
         for rect in self.block_overlays:
             self.plot_item.removeItem(rect)
         self.block_overlays.clear()
 
-        for b in blocks.blocks:
+    def highlight_blocks(self, blocks: BlockStructure):
+        """Highlight blocks with interactive hover info"""
+        # Remove previous overlays
+        self.clear_blocks()
+        self.set_matrix(blocks.A)
+
+        # Define a color palette (RGB values)
+        color_palette = [
+            (255, 0, 0),  # Red
+            (0, 255, 0),  # Green
+            (0, 0, 255),  # Blue
+            (255, 165, 0),  # Orange
+            (255, 0, 255),  # Magenta
+            (0, 255, 255),  # Cyan
+            (255, 255, 0),  # Yellow
+            (128, 0, 128),  # Purple
+            (255, 192, 203),  # Pink
+            (0, 128, 128),  # Teal
+            (128, 128, 0),  # Olive
+            (75, 0, 130),  # Indigo
+            (255, 127, 80),  # Coral
+            (64, 224, 208),  # Turquoise
+            (220, 20, 60),  # Crimson
+        ]
+
+        for idx, b in enumerate(blocks.blocks):
+            # Cycle through colors
+            color = color_palette[idx % len(color_palette)]
+
+            # Create rectangle from block ranges
             rect = QGraphicsRectItem(b.col_range[0], b.row_range[0],
                                      b.col_range[1] - b.col_range[0],
                                      b.row_range[1] - b.row_range[0])
-            rect.setPen(pg.mkPen(color=(255, 0, 0), width=2))
-            rect.setBrush(QBrush(QColor(255, 0, 0, 50)))  # semi-transparent
+
+            # Set pen (border) and brush (fill) with the cycled color
+            rect.setPen(pg.mkPen(color=color, width=2))
+            rect.setBrush(QBrush(QColor(color[0], color[1], color[2],
+                                        80)))  # semi-transparent (alpha=80)
 
             # Enable hover events
             rect.setAcceptHoverEvents(True)
-            rect.info_text = b.info
+
+            # Generate info text from block properties
+            row_size = b.row_range[1] - b.row_range[0]
+            col_size = b.col_range[1] - b.col_range[0]
+            rect.info_text = (f"Block {idx}\n"
+                              f"Rows: [{b.row_range[0]}, {b.row_range[1]})\n"
+                              f"Cols: [{b.col_range[0]}, {b.col_range[1]})\n"
+                              f"Size: {row_size} × {col_size}")
 
             # Connect hover events
             rect.hoverEnterEvent = self._make_hover_enter(rect)
@@ -288,13 +326,13 @@ class BlockMatrixWidget(QWidget):
     def _make_hover_enter(self, rect):
 
         def hoverEnter(event):
-            QtGui.QToolTip.showText(event.screenPos().toPoint(), rect.info_text)
+            QToolTip.showText(event.screenPos().toPoint(), rect.info_text)
 
         return hoverEnter
 
     def _make_hover_leave(self, rect):
 
         def hoverLeave(event):
-            QtGui.QToolTip.hideText()
+            QToolTip.hideText()
 
         return hoverLeave
