@@ -1,14 +1,16 @@
-from src.core.Model import Model
-from src.core.Solving import Solver
 import subprocess
 from pathlib import Path
+
+from ..core.Model import Model
+from ..core.Solving import Solver
+
 
 def solve_pips(m: Model, **kwargs):
     # Extract arguments
     block_count = kwargs.get('block-count', 1)
     blocks = kwargs.get('blocks', [])
     options = kwargs.get('options', {})
-    
+
     # Construct command components
     n_procs = block_count + 1
     model_path = Path(kwargs.get('model-path', 'SOMEFOLDER/model')).resolve()
@@ -16,18 +18,20 @@ def solve_pips(m: Model, **kwargs):
     scale_geo = options.get('scaleGeo', '')
     step_lp = options.get('stepLp', '')
     presolve = options.get('presolve', '')
-    
+
     # Full command
     cmd = [
-        'mpirun', '-np', str(n_procs),
+        'mpirun', '-np',
+        str(n_procs),
         str(kwargs.get('pips-path', 'PIPSMAINPATH/build/gmspips')),
-        str(n_procs), str(model_path), str(gams_path),
-        scale_geo, step_lp, presolve
+        str(n_procs),
+        str(model_path),
+        str(gams_path), scale_geo, step_lp, presolve
     ]
-    
+
     # Remove empty strings in case some options are missing
     cmd = [c for c in cmd if c]
-    
+
     # Run the solver
     try:
         result = subprocess.run(cmd, check=True, capture_output=True, text=True)
@@ -37,6 +41,7 @@ def solve_pips(m: Model, **kwargs):
         print("Solver failed:", e.stderr)
         raise e
 
+
 class SolveHandler:
 
     @staticmethod
@@ -45,4 +50,4 @@ class SolveHandler:
             case Solver.PIPS:
                 return solve_pips(model, **kwargs)
             case _:
-                raise NotImplementedError(f"Solver {s} not implemented")
+                raise NotImplementedError(f"Solver {solver} not implemented")

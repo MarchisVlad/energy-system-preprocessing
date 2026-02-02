@@ -1,12 +1,15 @@
+from ..BlockStructure import BlockStructure
 from .DetectionAlgorithm import DetectionAlgorithm
-from ..core.BlockStructure import BlockStructure
 
 
 class PatternDetection(DetectionAlgorithm):
     name = "pattern"
 
-    def detect(self, A):
-        row_perm, col_perm, blocks = self._run_rcm(A)
+    def __init__(self, model):
+        super().__init__(model)
+
+    def detect(self):
+        row_perm, col_perm, blocks = self._run_rcm(self.A)
 
         return BlockStructure(blocks=blocks,
                               count=len(blocks),

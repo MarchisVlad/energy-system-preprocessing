@@ -1,6 +1,7 @@
-from .DetectionAlgorithm import DetectionAlgorithm
-from ..core.BlockStructure import BlockStructure
 from sklearn import SpectralClustering
+
+from ..BlockStructure import BlockStructure
+from .DetectionAlgorithm import DetectionAlgorithm
 
 
 class SpectralDetection(DetectionAlgorithm):

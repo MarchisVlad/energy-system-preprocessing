@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
-from ..core.BlockStructure import BlockStructure
-from src.core.Model import Model
+
+from ..BlockStructure import BlockStructure
+from ..core.Model import Model
 
 
 class DetectionAlgorithm(ABC):
@@ -11,7 +12,11 @@ class DetectionAlgorithm(ABC):
     name: str
 
     @abstractmethod
-    def detect(self, model: Model) -> BlockStructure:
+    def __init__(self, model: Model):
+        self.A = model.A
+
+    @abstractmethod
+    def detect(self) -> BlockStructure:
         """
         Analyze matrix A and return a BlockStructure.
         """

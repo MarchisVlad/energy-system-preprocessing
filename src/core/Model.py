@@ -1,9 +1,15 @@
 from enum import Enum
-import src.core
-from src.detection import RCMDetection, SpectralDetection
-import mip
-from typing import Union
+from typing import List, Union
+
 import gamspy as gp
+import mip
+import numpy as np
+import scipy as sp
+from matplotlib import pyplot as plt
+from matplotlib.patches import Rectangle
+
+from ..BlockStructure import BlockStructure
+from .Presolving import PresolvingMethod
 
 
 class ProblemType(Enum):
@@ -26,68 +32,70 @@ class ModelFormat(Enum):
 
 class Model:
 
-    model = Union[gp.Model, mip.Model]
-    problem_type: ProblemType = None
-    problem_class: ProblemClass = None
-    model_format: ModelFormat = None
-    blocks: BlockStructure = None
-    presolves: List[PresolvingMethod] = None  # e.g. "CoeffTightening"
-
     def __init__(
         self,
-        A,
-        problem_type=ProblemType.MIN,
-        problem_class=ProblemClass.MIP,
-        model_format=ModelFormat.MPS,
-        blocks=None,
-        presolves=[],
+        A: sp.coo_matrix | None = None,
+        problem_type: ProblemType | None = ProblemType.MIN,
+        problem_class: ProblemClass | None = ProblemClass.MIP,
+        model_format: ModelFormat | None = ModelFormat.MPS,
+        blocks: list | None = None,
+        presolves: list | None = None,
     ):
-
         self.A = A
         self.problem_type = problem_type
         self.problem_class = problem_class
         self.model_format = model_format
         self.blocks = blocks
-
         self.presolves = presolves
+
+    def __init__(self, path, model_format=ModelFormat.MPS):
+        if model_format == ModelFormat.MPS:
+            # Read MPS file using python-mip
+            self.model = mip.Model()
+            self.model.read(path=path)
+
+        elif model_format == ModelFormat.GMS:
+            # TODO: Handle initialisation for GMS formats.
+            pass
+
+        self.A = self._extract_matrix(self.model)
 
     def __post_init__(self):
         if (isinstance(self.model, mip.Model) and
                 not self.model_format is ModelFormat.MPS):
             raise TypeError(
-                "Models must have their format specified: attempted to" +
-                " construct a mip.Model without setting the model_format parameter."
-            )
+                "Models must have their format specified: attempted to " \
+                "construct a mip.Model without setting the model_format " \
+                "parameter.")
         if (isinstance(self.model, gp.Model) and
                 not self.model_format is ModelFormat.GMS):
-            raise Type
+            raise TypeError(
+                "Models must have their format specified: attempted to " \
+                "construct a gp.Model without setting the model_format " \
+                "parameter."
+            )
 
-    def __init__(self, path, model_format=ModelFormat.MPS):
-        pass
+    def _extract_matrix(self, model) -> sp.coo_matrix:
+        if self.model_format == ModelFormat.MPS:
 
-    def _read_mps(self, mps_path):
-        """Read MPS file using python-mip"""
-        m = Model()
-        m.read(mps_path)
-        A = self._extract_matrix(m)
-        return m, A
+            n_rows = len(model.constrs)
+            n_cols = len(model.vars)
 
-    def _extract_matrix(self, model):
-        """Extract constraint matrix from python-mip Model"""
-        n_rows = len(model.constrs)
-        n_cols = len(model.vars)
+            data, rows, cols = [], [], []
 
-        data, rows, cols = [], [], []
+            for i, constr in enumerate(model.constrs):
+                expr = constr.expr
+                for var, coeff in expr.expr.items():
+                    rows.append(i)
+                    cols.append(var.idx)
+                    data.append(coeff)
 
-        for i, constr in enumerate(model.constrs):
-            expr = constr.expr
-            for var, coeff in expr.expr.items():
-                rows.append(i)
-                cols.append(var.idx)
-                data.append(coeff)
+            return sp.coo_matrix((data, (rows, cols)),
+                                 shape=(n_rows, n_cols)).tocsr()
 
-        return sp.coo_matrix((data, (rows, cols)),
-                             shape=(n_rows, n_cols)).tocsr()
+        elif self.model_format == ModelFormat.GMS:
+            # TODO: Matrix extraction for GMS formats.
+            pass
 
     def _get_col_ordering(self, row_perm):
         """Get column ordering that follows row ordering"""
@@ -105,18 +113,6 @@ class Model:
 
         col_perm = np.argsort(col_first_row)
         return col_perm
-
-    def _choose_detection_method(self):
-        """Choose best detection method based on matrix properties"""
-        # For small matrices, use spectral
-        if self.n_rows < 1000:
-            return RCMDetection()
-        # For very sparse matrices, try pattern recognition first
-        elif self.A.nnz / (self.n_rows * self.n_cols) < 0.01:
-            return "pattern"
-        # Default to RCM for medium/large matrices
-        else:
-            return "rcm"
 
     def plot_sparsity_pattern(self,
                               figsize=(10, 8),
@@ -225,3 +221,79 @@ class Model:
 
         plt.tight_layout()
         return fig, ax
+
+    def plot_coefficient_heatmap(self,
+                                 figsize=(10, 8),
+                                 max_display=None,
+                                 log_scale=True):
+        """
+        Heatmap showing coefficient magnitudes (log scale)
+        Useful for detecting numerical issues
+        """
+        A_display = self.A
+
+        if max_display:
+            max_r, max_c = max_display
+            A_display = self.A[:max_r, :max_c].toarray()
+        else:
+            A_display = self.A.toarray()
+
+        # Take absolute value and add small epsilon to avoid log(0)
+        if log_scale:
+            A_display = np.log10(np.abs(A_display) + 1e-20)
+            A_display[A_display < -10] = np.nan  # Mark zeros as NaN
+
+        fig, ax = plt.subplots(figsize=figsize)
+        im = ax.imshow(A_display,
+                       aspect='auto',
+                       cmap='viridis',
+                       interpolation='nearest')
+
+        cbar = plt.colorbar(im, ax=ax)
+        if log_scale:
+            cbar.set_label('log₁₀|coefficient|', fontsize=11)
+        else:
+            cbar.set_label('coefficient magnitude', fontsize=11)
+
+        ax.set_xlabel('Variables', fontsize=12)
+        ax.set_ylabel('Constraints', fontsize=12)
+        title = 'Coefficient Magnitude Heatmap'
+        if log_scale:
+            title += ' (log scale)'
+        ax.set_title(title, fontsize=14, fontweight='bold')
+
+        plt.tight_layout()
+        return fig, ax
+
+    def plot_row_col_histograms(self, figsize=(12, 5)):
+        """
+        Distribution of nonzeros per row/column
+        Helps identify problem structure
+        """
+        row_nz = np.diff(self.A.indptr)
+        col_nz = np.diff(self.A.tocsc().indptr)
+
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=figsize)
+
+        # Row histogram
+        ax1.hist(row_nz, bins=50, edgecolor='black', alpha=0.7)
+        ax1.axvline(row_nz.mean(),
+                    color='r',
+                    linestyle='--',
+                    label=f'Mean: {row_nz.mean():.1f}')
+        ax1.set_xlabel('Nonzeros per row', fontsize=11)
+        ax1.set_ylabel('Frequency', fontsize=11)
+        ax1.set_title('Row Sparsity Distribution',
+                      fontsize=12,
+                      fontweight='bold')
+        ax1.legend()
+        ax1.grid(True, alpha=0.3)
+
+        # Column histogram
+        ax2.hist(col_nz, bins=50, edgecolor='black', alpha=0.7)
+        ax2.axvline(col_nz.mean(),
+                    color='r',
+                    linestyle='--',
+                    label=f'Mean: {col_nz.mean():.1f}')
+        ax2.set_xlabel('Nonzeros per column', fontsize=11)
+        ax2.set
