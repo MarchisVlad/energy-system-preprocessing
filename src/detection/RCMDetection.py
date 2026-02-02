@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.sparse.csgraph import reverse_cuthill_mckee
 
-from ..BlockStructure import BlockStructure
+from ..core.BlockStructure import BlockStructure
 from ..core.Model import Model
 from .DetectionAlgorithm import DetectionAlgorithm
 
