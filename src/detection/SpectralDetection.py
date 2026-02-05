@@ -1,8 +1,9 @@
 import numpy as np
 import scipy.sparse as sp
+from scipy.sparse.linalg import eigsh
 from sklearn.cluster import SpectralClustering
 
-from ..core.BlockStructure import BlockStructure
+from ..core.BlockStructure import Block, BlockStructure
 from ..core.Model import Model
 from .DetectionAlgorithm import DetectionAlgorithm
 
@@ -15,14 +16,8 @@ class SpectralDetection(DetectionAlgorithm):
 
     def detect(self, **kwargs):
         """Spectral clustering on constraint connectivity"""
-        try:
-            from sklearn.cluster import SpectralClustering
-        except ImportError:
-            print(
-                "Warning: sklearn required for spectral clustering, falling back to RCM"
-            )
 
-        n_blocks = kwargs.get('n_blocks', 10)
+        n_blocks = kwargs.get('n_blocks', None)
 
         # Build constraint similarity matrix
         AT = self.A.T
@@ -58,14 +53,13 @@ class SpectralDetection(DetectionAlgorithm):
                                                       col_partition, row_perm,
                                                       col_perm)
 
-        BlockStructure(blocks, len(blocks), row_perm, col_perm)
+        A_permuted = self.A[row_perm, :][:, col_perm]
 
-        return BlockStructure(row_partition,
-                              col_partition,
-                              blocks,
-                              row_perm,
-                              col_perm,
-                              method='spectral')
+        return BlockStructure(blocks=blocks,
+                              A=A_permuted,
+                              count=len(blocks),
+                              row_permutation=row_perm,
+                              col_permutation=col_perm)
 
     def _compute_col_partition(self, row_partition):
         """Assign columns to blocks based on row partition"""
@@ -121,32 +115,35 @@ class SpectralDetection(DetectionAlgorithm):
             row_indices = np.where(row_mask)[0]
             col_indices = np.where(col_mask)[0]
 
-            if len(row_indices) > 0 and len(col_indices) > 0:
-                blocks.append({
-                    'row_start': row_indices[0],
-                    'row_end': row_indices[-1] + 1,
-                    'col_start': col_indices[0],
-                    'col_end': col_indices[-1] + 1,
-                    'block_id': b
-                })
+            row_start = row_indices[0]
+            row_end = row_indices[-1] + 1
+            col_start = col_indices[0]
+            col_end = col_indices[-1] + 1
+
+            vertices = [
+                (row_start, col_start),  # top-left
+                (row_start, col_end),  # top-right
+                (row_end, col_end),  # bottom-right
+                (row_end, col_start)  # bottom-left
+            ]
+
+            block = Block(vertices=vertices,
+                          row_range=(row_start, row_end),
+                          col_range=(col_start, col_end))
+            blocks.append(block)
 
         return blocks
 
     def _estimate_n_blocks(self, similarity_matrix):
         """Estimate number of blocks using eigenvalue gap"""
-        try:
-            from scipy.sparse.linalg import eigsh
+        # Compute first few eigenvalues
+        n_eigs = min(20, self.n_rows - 2)
+        eigenvalues = eigsh(similarity_matrix,
+                            k=n_eigs,
+                            return_eigenvectors=False)
 
-            # Compute first few eigenvalues
-            n_eigs = min(20, self.n_rows - 2)
-            eigenvalues = eigsh(similarity_matrix,
-                                k=n_eigs,
-                                return_eigenvectors=False)
+        # Look for largest gap
+        gaps = np.diff(sorted(eigenvalues))
+        n_blocks = np.argmax(gaps) + 2  # +2 because of diff and 0-indexing
 
-            # Look for largest gap
-            gaps = np.diff(sorted(eigenvalues))
-            n_blocks = np.argmax(gaps) + 2  # +2 because of diff and 0-indexing
-
-            return max(2, min(n_blocks, 10))  # Clamp between 2 and 10
-        except:
-            return 3  # Default
+        return max(2, min(n_blocks, 200))  # Clamp between 2 and 10

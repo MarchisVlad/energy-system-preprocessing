@@ -41,7 +41,7 @@ class DetectionHandler:
         else:
             raise ValueError(f"Unknown method: {method}")
 
-        return algorithm.detect(n_blocks=n_blocks,
+        return algorithm.detect(n_blocks=None,
                                 min_block_size=min_block_size,
                                 threshold=threshold)
 
