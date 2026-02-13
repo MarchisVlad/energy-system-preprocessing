@@ -5,7 +5,7 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (QApplication, QMainWindow, QSplitter, QVBoxLayout,
                              QWidget)
 
-from src.core.Model import Model, ModelHistory
+from src.core.model import Model, ModelHistory
 
 from ..config import STARTUP_ROOT
 from .ui.browser_panel import BrowserPanel

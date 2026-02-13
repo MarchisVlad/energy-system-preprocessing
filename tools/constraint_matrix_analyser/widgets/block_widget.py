@@ -6,7 +6,7 @@ from PyQt6.QtWidgets import (QGraphicsRectItem, QHBoxLayout, QLabel, QScrollBar,
 from pyqtgraph.Qt import QtCore, QtGui, QtWidgets
 from pyqtgraph.Qt.QtWidgets import QToolTip
 
-from src.core.BlockStructure import BlockStructure
+from src.core.block import BlockStructure
 
 
 class BlockMatrixWidget(QWidget):

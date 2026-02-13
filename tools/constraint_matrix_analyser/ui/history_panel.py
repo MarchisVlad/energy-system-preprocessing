@@ -5,7 +5,7 @@ from PyQt6.QtWidgets import (QComboBox, QDoubleSpinBox, QGroupBox, QHBoxLayout,
                              QLabel, QPushButton, QScrollArea, QVBoxLayout,
                              QWidget)
 
-from src.core.Presolving import PresolvingMethod
+from src.core.presolving import PresolvingMethod
 
 from ..widgets.history_tab import HistoryTab
 

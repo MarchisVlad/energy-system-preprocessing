@@ -2,9 +2,9 @@ from PyQt6.QtWidgets import (QComboBox, QFileDialog, QGroupBox, QHBoxLayout,
                              QLabel, QPushButton, QTableWidget, QVBoxLayout,
                              QWidget)
 
-from src.utils.DetectionHandler import DetectionHandler
+from src.detection.algorithm import DetectionHandler
 
-from ..widgets.block_widget import BlockMatrixWidget
+from ..ui.widgets.block_widget import BlockMatrixWidget
 
 
 class MatrixPanel(QWidget):

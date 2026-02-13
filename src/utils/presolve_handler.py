@@ -3,8 +3,8 @@ from pathlib import Path
 
 from src.config import PAPILO_PATH
 
-from ..core.Model import Model
-from ..core.Presolving import Presolver, PresolvingMethod
+from ..core.model import Model
+from ..core.presolving import Presolver, PresolvingMethod
 
 
 def presolve_papilo(model: Model,

@@ -1,8 +1,8 @@
 import subprocess
 from pathlib import Path
 
-from ..core.Model import Model
-from ..core.Solving import Solver
+from ..core.model import Model
+from ..core.solving import Solver
 
 
 def solve_pips(m: Model, **kwargs):

@@ -1,13 +1,14 @@
 from abc import ABC, abstractmethod
 from enum import Enum
 
+import mip
 import scipy.sparse as sp
 
-from ..core.BlockStructure import BlockStructure
-from ..core.Model import Model
+from src.core.block import BlockStructure
+from src.core.model import Model
 
 
-class DetectionAlgorithm(ABC):
+class PresolveAlgorithm(ABC):
     """
     Abstract umbrella for all block detection algorithms.
     """
@@ -15,12 +16,11 @@ class DetectionAlgorithm(ABC):
     name: str
 
     @abstractmethod
-    def __init__(self, A: sp.coo_matrix):
-        self.A = A
-        self.n_rows, self.n_cols = A.shape
+    def __init__(self, model: Model):
+        self.model = model
 
     @abstractmethod
-    def detect(self, **kwargs) -> BlockStructure:
+    def presolve(self, **kwargs) -> BlockStructure:
         """
         Analyze matrix A and return a BlockStructure.
         """
