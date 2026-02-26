@@ -1,6 +1,6 @@
 # Toolchain.cmake - point CMake's FindBoost to the local Boost install
 # Replace the path below with your actual boost install prefix
-set(BOOST_ROOT "/data/packages/boost_1_78_0" CACHE PATH "Boost root (toolchain)")
+set(BOOST_ROOT "/vol/bitbucket/vm922/packages/boost_1_78_0" CACHE PATH "Boost root (toolchain)")
 set(Boost_NO_SYSTEM_PATHS ON CACHE BOOL "Do not search system paths for Boost")
 # Also give CMake a general prefix path to search
 set(CMAKE_PREFIX_PATH "${BOOST_ROOT}" CACHE PATH "Prefix path for find_package")

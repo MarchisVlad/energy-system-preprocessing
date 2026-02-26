@@ -2,9 +2,8 @@ from PyQt6.QtWidgets import (QComboBox, QFileDialog, QGroupBox, QHBoxLayout,
                              QLabel, QPushButton, QTableWidget, QVBoxLayout,
                              QWidget)
 
-from src.detection.algorithm import DetectionHandler
-
-from ..ui.widgets.block_widget import BlockMatrixWidget
+from ..widgets.block_widget import BlockMatrixWidget
+from src.detection.algorithm import detect_block_structure
 
 
 class MatrixPanel(QWidget):
@@ -119,7 +118,7 @@ class MatrixPanel(QWidget):
         if current_state:
             _, A = current_state
 
-            blocks = DetectionHandler().detect_block_structure(
+            blocks = detect_block_structure(
                 A, detection_method)
 
             self.block_matrix_info.highlight_blocks(blocks)

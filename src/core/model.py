@@ -2,9 +2,9 @@
 
 Notes
 -----
-    `Sense`, `Problem` and `FileFormat` are implemented in the same way as the 
+    `Sense`, `Problem` and `FileFormat` are implemented in the same way as the
     `gamspy` API <https://gamspy.readthedocs.io/en/latest/reference/index.html>
-    but are duplicated to represent limitations of the current implementation 
+    but are duplicated to represent limitations of the current implementation
     and facilitate translation between mip.Model and gp.Model specific methods.
 """
 
@@ -87,13 +87,21 @@ class FileFormat(Enum):
     GDXJacobian = "jacobian.gdx"
     """GDX file with model data incl. Jacobian and Hessian evaluated at current point."""
 
+    @classmethod
+    def values(cls):
+        """Convenience function to return all values of enum"""
+        return list(cls._value2member_map_.keys())
+
+    def __str__(self) -> str:
+        return self.value
+
 
 class Model:
     """Class representing an optimisation model.
-    
+
     Attributes
     ----------
-        model : Union[mip.Model, gp.Model] 
+        model : Union[mip.Model, gp.Model]
             An existing model object to wrap.
         A : sp.coo_matrix
             Sparse representation of the model's constrain matrices.
@@ -118,7 +126,7 @@ class Model:
         problem: Problem | None = Problem.MIP,
         sense: Sense | None = Sense.MIN,
         blocks: BlockStructure | None = None,
-        presolves: list[PresolvingMethod] | None = None,
+        presolves: list[PresolvingMethod] | None = [],
     ):
         """
         Construct a Model instance.
@@ -158,8 +166,7 @@ class Model:
         # Initialise from path if specified.
         if self.path is not None:
             if format is None:
-                raise ValueError(
-                    'File format must be specified when loading from path')
+                raise ValueError("File format must be specified when loading from path")
 
             if format == FileFormat.CPLEXMPS:
                 self.model = mip.Model()
@@ -191,17 +198,20 @@ class Model:
 
         if self.model is None:
 
-            raise RuntimeError("Attempted to convert a model but the " \
-            "self.model attribute is not set. Probably caused by " \
-            "initialisation with just the matrix component.")
+            raise RuntimeError(
+                "Attempted to convert a model but the "
+                "self.model attribute is not set. Probably caused by "
+                "initialisation with just the matrix component."
+            )
 
         if isinstance(self.model, type):
-            warnings.warn(f'Model is already in the desired format: {type}',
-                          UserWarning)
+            warnings.warn(
+                f"Model is already in the desired format: {type}", UserWarning
+            )
 
         conversion_map = {
             mip.Model: lambda m: m._to_mip(),
-            gp.Model: lambda m: m._to_gamspy()
+            gp.Model: lambda m: m._to_gamspy(),
         }
 
         conversion_map[type](self)
@@ -209,12 +219,10 @@ class Model:
     def _to_mip(self):
         if isinstance(self.model, gp.Model):
             with tempfile.TemporaryDirectory as tempdir:
-                options = gp.ConvertOptions(GAMSObjVar='obj')
-                self.model.convert(tempdir,
-                                   gp.FileFormat.FixedMPS,
-                                   options=options)
+                options = gp.ConvertOptions(GAMSObjVar="obj")
+                self.model.convert(tempdir, gp.FileFormat.FixedMPS, options=options)
                 self.model = mip.Model()
-                self.model.read(path=(Path(tempdir) / 'fixed.MPS'))
+                self.model.read(path=(Path(tempdir) / "fixed.MPS"))
                 self.A = self._extract_matrix(self.model)
         else:
             # TODO: implement conversions to other available types.
@@ -225,9 +233,9 @@ class Model:
         pass
 
     def _extract_matrix(self) -> Matrix:
-        """ 
+        """
         Function that returns the constraint matrix of the model.
-        
+
         Returns
         ------
         Matrix
@@ -247,8 +255,9 @@ class Model:
                     cols.append(var.idx)
                     data.append(1 if coeff != 0 else 0)
 
-            return Matrix((data, (rows, cols)),
-                          shape=(n_rows, n_cols)).convert(MatrixFormat.CSR)
+            return Matrix((data, (rows, cols)), shape=(n_rows, n_cols)).convert(
+                MatrixFormat.CSR
+            )
 
         elif isinstance(self.model, gp.Model):
             # TODO: Matrix extraction for GMS formats.
@@ -278,23 +287,23 @@ class ModelHistory:
 
     def __init__(self, model: Model):
         """Initalise a new model history for a pre-exisiting Model.
-        
+
         Parameters
         ----------
         model : Model
-            The initial model. `states` and `current_index` will be 
+            The initial model. `states` and `current_index` will be
             initialised using data of the model.
 
         Returns
         -------
             A `ModelHistory` object.
         """
-        self.states: list[Model] = {model}
+        self.states: list[Model] = [model]
         self.presolves = model.presolves
         self.current_index: int = len(model.presolves)
 
     def add_state(self, step: Optional[PresolvingMethod], A: Matrix):
-        self.states = self.states[:self.current_index + 1]
+        self.states = self.states[: self.current_index + 1]
         self.states.append((step, A))
         self.current_index = len(self.states) - 1
 
