@@ -5,6 +5,8 @@ from src.config import PAPILO_PATH
 
 from ..core.model import Model
 from ..core.presolving import Presolver, PresolvingMethod
+from ..presolvers.techniques.coefficient_strengthening import \
+    CoefficientStrengthening
 
 
 def presolve_papilo(model: Model,
@@ -48,6 +50,22 @@ class PresolveHandler:
         match presolver:
             case Presolver.PaPILO:
                 return presolve_papilo(model, method, **kwargs)
-            case _:
-                raise NotImplementedError(
-                    f"Presolver {presolver} not implemented")
+            case Presolver.Static:
+
+                algorithm_map = {
+                    PresolvingMethod.CoeffTightening: CoefficientStrengthening
+                }
+                if method not in algorithm_map:
+                    raise ValueError(f"Unknown algorithm: {method}")
+
+                presolving_class = algorithm_map[method]
+
+                # Filter kwargs to only include valid parameters for the specific reorderer
+                import inspect
+                sig = inspect.signature(presolving_class.__init__)
+                valid_params = set(sig.parameters.keys()) - {'self'}
+                filtered_kwargs = {
+                    k: v for k, v in kwargs.items() if k in valid_params
+                }
+
+                return presolving_class(**filtered_kwargs)
