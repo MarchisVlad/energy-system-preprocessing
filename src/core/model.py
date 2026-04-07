@@ -21,7 +21,7 @@ import scipy.sparse as sp
 
 from src.core.block import BlockStructure
 from src.core.matrix import Matrix, MatrixFormat
-from src.core.presolving import PresolvingMethod
+from src.core.presolving import Presolver, PresolvingMethod
 
 
 class Sense(Enum):
@@ -120,9 +120,9 @@ class Model:
     def __init__(
         self,
         model: Union[mip.Model, gp.Model] | None = None,
-        path: str | None = None,
+        path: str | None = "",
         format: FileFormat | None = None,
-        A: Matrix | None = None,
+        A: sp.spmatrix | None = None,
         problem: Problem | None = Problem.MIP,
         sense: Sense | None = Sense.MIN,
         blocks: BlockStructure | None = None,
@@ -155,34 +155,68 @@ class Model:
         """
 
         self.model = model
-        self.path = path
+        self.path = "" if path is None else path
         self.format = format
         self._A = A
         self.problem = problem
         self.sense = sense
         self.blocks = blocks
-        self.presolves = presolves
+        self.presolves = [] if presolves is None else presolves
 
         # Initialise from path if specified.
-        if self.path is not None:
+        if self.path:
             if format is None:
-                raise ValueError("File format must be specified when loading from path")
+                if self.path.endswith(".mps"):
+                    format = FileFormat.CPLEXMPS
+                elif self.path.endswith(".lp"):
+                    format = FileFormat.CPLEXLP
+                else:
+                    raise ValueError(
+                        "File format must be specified when loading from path"
+                    )
 
             if format == FileFormat.CPLEXMPS:
                 self.model = mip.Model()
-                self.model.read(path=path)
+                self.model.read(path=self.path)
 
-            elif format == None:
+            elif format is None:
                 # TODO: Handle initialisation for other formats.
                 pass
 
         # Wrap around pre-exisiting models.
         if self.model is not None:
             self._A = self._extract_matrix()
+            self._integers = self._extract_integers()
+            lo, up = self._extract_bounds()
+            self._lo = lo
+            self._up = up
 
     @property
-    def A(self, without_objective=False):
-        return self._A[1:][1:] if without_objective else self._A
+    def A(self, without_objective=False) -> sp.spmatrix:
+        if self._A is None:
+            raise ValueError("Model matrix A is not set.")
+
+        # return self._A[1:][1:] if without_objective else self._A
+        return self._A
+
+    @property
+    def integers(self, reordering: np.ndarray = np.empty(0, dtype=int)) -> np.ndarray:
+        if self._integers is None:
+            raise ValueError("Model integers are not set.")
+
+        if len(reordering) > 0:
+            return self._integers[reordering]
+
+        return self._integers
+
+    def update_matrix(self):
+        if self.model is not None:
+            self._A = self._extract_matrix()
+        else:
+            raise RuntimeError(
+                "Tried updating model matrix but self.model is not set. "
+                "Probably caused by initialisation with just the matrix component."
+            )
 
     def convert(self, type: type[mip.Model | gp.Model]):
         """
@@ -218,12 +252,12 @@ class Model:
 
     def _to_mip(self):
         if isinstance(self.model, gp.Model):
-            with tempfile.TemporaryDirectory as tempdir:
+            with tempfile.TemporaryDirectory() as tempdir:
                 options = gp.ConvertOptions(GAMSObjVar="obj")
                 self.model.convert(tempdir, gp.FileFormat.FixedMPS, options=options)
                 self.model = mip.Model()
-                self.model.read(path=(Path(tempdir) / "fixed.MPS"))
-                self.A = self._extract_matrix(self.model)
+                self.model.read(path=str(Path(tempdir) / "fixed.MPS"))
+                self._A = self._extract_matrix()
         else:
             # TODO: implement conversions to other available types.
             pass
@@ -232,7 +266,7 @@ class Model:
         # TODO: implement conversion to gamspy
         pass
 
-    def _extract_matrix(self) -> Matrix:
+    def _extract_matrix(self) -> sp.spmatrix:
         """
         Function that returns the constraint matrix of the model.
 
@@ -255,13 +289,112 @@ class Model:
                     cols.append(var.idx)
                     data.append(1 if coeff != 0 else 0)
 
-            return Matrix((data, (rows, cols)), shape=(n_rows, n_cols)).convert(
-                MatrixFormat.CSR
-            )
+            return sp.coo_matrix((data, (rows, cols)), shape=(n_rows, n_cols))
 
         elif isinstance(self.model, gp.Model):
             # TODO: Matrix extraction for GMS formats.
             pass
+
+        raise TypeError(f"Unsupported model type: {type(self.model)!r}")
+
+    def _extract_integers(self) -> np.ndarray:
+        """
+        Return a 0/1 vector marking integer-restricted columns
+        in GAMS style.
+
+        Returns
+        -------
+        np.ndarray
+            1 for integer/binary columns, 0 otherwise.
+        """
+        if isinstance(self.model, mip.Model):
+            return np.fromiter(
+                (
+                    1 if var.var_type in (mip.BINARY, mip.INTEGER) else 0
+                    for var in self.model.vars
+                ),
+                dtype=np.int8,
+                count=len(self.model.vars),
+            )
+
+        elif isinstance(self.model, gp.Model):
+            # Straight GAMSPy version if you already use a flattened
+            # variable ordering elsewhere.
+            vars_ = self.model.container.getVariables()
+            integer_like = {"binary", "integer", "semiint"}
+
+            return np.fromiter(
+                (1 if str(var.type).lower() in integer_like else 0 for var in vars_),
+                dtype=np.int8,
+                count=len(vars_),
+            )
+
+        raise TypeError(f"Unsupported model type: {type(self.model)!r}")
+
+    def _extract_bounds(self) -> tuple[np.ndarray, np.ndarray]:
+        """
+        Return lower and upper bounds of the model variables.
+
+        Returns
+        -------
+        tuple[np.ndarray, np.ndarray]
+            (lo, up) arrays aligned with the variable ordering.
+        """
+        if isinstance(self.model, mip.Model):
+            n_cols = len(self.model.vars)
+            lo = np.empty(n_cols, dtype=float)
+            up = np.empty(n_cols, dtype=float)
+
+            for j, var in enumerate(self.model.vars):
+                # Strict GAMS-style handling for binaries:
+                # binary variables are 0/1 variables.
+                if var.var_type == mip.BINARY:
+                    lo[j] = 0.0
+                    up[j] = 1.0
+                else:
+                    lo[j] = float(var.lb)
+                    up[j] = float(var.ub)
+
+            return lo, up
+
+        elif isinstance(self.model, gp.Model):
+            # This assumes your GAMSPy column ordering is exactly the order
+            # returned by container.getVariables(). If you flatten indexed
+            # variables elsewhere, use the same flattening here too.
+            vars_ = self.model.container.getVariables()
+
+            lo = np.empty(len(vars_), dtype=float)
+            up = np.empty(len(vars_), dtype=float)
+
+            for j, var in enumerate(vars_):
+                vtype = str(var.type).lower()
+
+                # If records are present, use explicit lower/upper values.
+                # Otherwise fall back to GAMS defaults by type.
+                if var.records is not None:
+                    # For scalar variables this is one row; for indexed symbols
+                    # you probably want your own flattening logic instead.
+                    lo[j] = float(var.records["lower"].iloc[0])
+                    up[j] = float(var.records["upper"].iloc[0])
+                else:
+                    if vtype == "binary":
+                        lo[j], up[j] = 0.0, 1.0
+                    elif vtype == "integer":
+                        lo[j], up[j] = 0.0, np.inf
+                    elif vtype == "semiint":
+                        lo[j], up[j] = 1.0, np.inf
+                    elif vtype == "positive":
+                        lo[j], up[j] = 0.0, np.inf
+                    elif vtype == "negative":
+                        lo[j], up[j] = -np.inf, 0.0
+                    elif vtype == "semicont":
+                        lo[j], up[j] = 1.0, np.inf
+                    else:  # free, sos1, sos2, etc. -> use your preferred convention
+                        lo[j], up[j] = -np.inf, np.inf
+
+            return lo, up
+
+        raise TypeError(f"Unsupported model type: {type(self.model)!r}")
 
 
 class ModelHistory:
@@ -298,13 +431,12 @@ class ModelHistory:
         -------
             A `ModelHistory` object.
         """
-        self.states: list[Model] = [model]
-        self.presolves = model.presolves
-        self.current_index: int = len(model.presolves)
+        self.states: list[Tuple[Optional[PresolvingMethod], Model]] = [(None, model)]
+        self.current_index: int = len(self.states) - 1
 
-    def add_state(self, step: Optional[PresolvingMethod], A: Matrix):
+    def add_state(self, step: Optional[PresolvingMethod], model: Model):
         self.states = self.states[: self.current_index + 1]
-        self.states.append((step, A))
+        self.states.append((step, model))
         self.current_index = len(self.states) - 1
 
     def get_current_state(self):

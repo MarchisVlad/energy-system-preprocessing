@@ -83,7 +83,7 @@ class MatrixProperty(Enum):
 
 class Matrix:
     """Class representing a sparse matrix with comprehensive manipulation capabilities.
-    
+
     Attributes
     ----------
     data : Union[sp.spmatrix, np.ndarray]
@@ -149,12 +149,12 @@ class Matrix:
             self.data = self._create_sparse(format, shape, dtype=self._dtype)
         else:
             raise ValueError(
-                "Must provide either data, shape, or path to initialize Matrix")
+                "Must provide either data, shape, or path to initialize Matrix"
+            )
 
         self._analyze_properties()
 
-    def _initialize_from_data(self, data: Union[sp.spmatrix, np.ndarray, List,
-                                                Tuple]):
+    def _initialize_from_data(self, data: Union[sp.spmatrix, np.ndarray, List, Tuple]):
         """Initialize matrix from various data formats."""
         if isinstance(data, sp.spmatrix):
             self.data = data
@@ -165,13 +165,13 @@ class Matrix:
             # Assume COO format: (data, (row, col))
             if len(data) == 2 and isinstance(data[1], tuple):
                 values, (rows, cols) = data
-                if 'shape' in self.metadata:
-                    shape = self.metadata['shape']
+                if "shape" in self.metadata:
+                    shape = self.metadata["shape"]
                 else:
                     shape = (max(rows) + 1, max(cols) + 1)
-                self.data = sp.coo_matrix((values, (rows, cols)),
-                                          shape=shape,
-                                          dtype=self._dtype)
+                self.data = sp.coo_matrix(
+                    (values, (rows, cols)), shape=shape, dtype=self._dtype
+                )
                 self._format = MatrixFormat.COO
             else:
                 # Treat as dense array
@@ -179,8 +179,9 @@ class Matrix:
         else:
             raise TypeError(f"Unsupported data type: {type(data)}")
 
-    def _create_sparse(self, format: MatrixFormat, shape: Tuple[int, int],
-                       dtype: np.dtype) -> sp.spmatrix:
+    def _create_sparse(
+        self, format: MatrixFormat, shape: Tuple[int, int], dtype: np.dtype
+    ) -> sp.spmatrix:
         """Create an empty sparse matrix of specified format."""
         format_map = {
             MatrixFormat.COO: sp.coo_matrix,
@@ -209,8 +210,7 @@ class Matrix:
                 return format_enum
         return MatrixFormat.CSR  # Default fallback
 
-    def _to_sparse(self, array: np.ndarray,
-                   format: MatrixFormat) -> sp.spmatrix:
+    def _to_sparse(self, array: np.ndarray, format: MatrixFormat) -> sp.spmatrix:
         """Convert dense array to sparse format."""
         format_map = {
             MatrixFormat.COO: sp.coo_matrix,
@@ -248,7 +248,7 @@ class Matrix:
         """Get the current matrix format."""
         return self._format
 
-    def convert(self, format: MatrixFormat) -> 'Matrix':
+    def convert(self, format: MatrixFormat) -> "Matrix":
         """
         Convert matrix to a different sparse format.
 
@@ -295,7 +295,7 @@ class Matrix:
         """
         return self.data.toarray()
 
-    def copy(self) -> 'Matrix':
+    def copy(self) -> "Matrix":
         """
         Create a deep copy of the matrix.
 
@@ -311,7 +311,7 @@ class Matrix:
             metadata=self.metadata.copy(),
         )
 
-    def transpose(self) -> 'Matrix':
+    def transpose(self) -> "Matrix":
         """
         Transpose the matrix.
 
@@ -327,7 +327,7 @@ class Matrix:
             metadata=self.metadata.copy(),
         )
 
-    def get_row(self, index: int) -> 'Matrix':
+    def get_row(self, index: int) -> "Matrix":
         """
         Extract a single row.
 
@@ -344,7 +344,7 @@ class Matrix:
         row_data = self.data[index, :]
         return Matrix(data=row_data, format=self._format)
 
-    def get_col(self, index: int) -> 'Matrix':
+    def get_col(self, index: int) -> "Matrix":
         """
         Extract a single column.
 
@@ -361,8 +361,9 @@ class Matrix:
         col_data = self.data[:, index]
         return Matrix(data=col_data, format=self._format)
 
-    def get_submatrix(self, rows: Union[slice, List[int]],
-                      cols: Union[slice, List[int]]) -> 'Matrix':
+    def get_submatrix(
+        self, rows: Union[slice, List[int]], cols: Union[slice, List[int]]
+    ) -> "Matrix":
         """
         Extract a submatrix.
 
@@ -381,7 +382,7 @@ class Matrix:
         submatrix_data = self.data[rows, cols]
         return Matrix(data=submatrix_data, format=self._format)
 
-    def eliminate_zeros(self) -> 'Matrix':
+    def eliminate_zeros(self) -> "Matrix":
         """
         Remove zero entries from the matrix.
 
@@ -473,7 +474,7 @@ class Matrix:
                     return False
         return True
 
-    def norm(self, ord: Union[str, int, float] = 'fro') -> float:
+    def norm(self, ord: Union[str, int, float] = "fro") -> float:
         """
         Compute matrix norm.
 
@@ -498,20 +499,20 @@ class Matrix:
         path_obj = Path(path)
         suffix = path_obj.suffix.lower()
 
-        if suffix == '.npz':
+        if suffix == ".npz":
             loaded = sp.load_npz(path)
             self.data = loaded
             self._format = self._get_format_from_matrix(loaded)
-        elif suffix == '.mtx':
+        elif suffix == ".mtx":
             loaded = sio.mmread(path)
             if not sp.issparse(loaded):
                 loaded = sp.csr_matrix(loaded)
             self.data = loaded
             self._format = self._get_format_from_matrix(loaded)
-        elif suffix == '.mat':
+        elif suffix == ".mat":
             mat_dict = sio.loadmat(path)
             # Assume the matrix is stored under a key (needs specification)
-            key = self.metadata.get('mat_key', 'matrix')
+            key = self.metadata.get("mat_key", "matrix")
             if key in mat_dict:
                 loaded = mat_dict[key]
                 if not sp.issparse(loaded):
@@ -538,28 +539,29 @@ class Matrix:
         if format is None:
             format = path_obj.suffix.lower()[1:]  # Remove leading dot
 
-        if format == 'npz':
+        if format == "npz":
             sp.save_npz(path, self.data)
-        elif format == 'mtx':
+        elif format == "mtx":
             sio.mmwrite(path, self.data)
-        elif format == 'mat':
-            key = self.metadata.get('mat_key', 'matrix')
+        elif format == "mat":
+            key = self.metadata.get("mat_key", "matrix")
             sio.savemat(path, {key: self.data})
         else:
             raise ValueError(f"Unsupported save format: {format}")
 
     def __repr__(self) -> str:
         """String representation of the Matrix."""
-        return (f"Matrix(shape={self.shape}, format={self.format}, "
-                f"nnz={self.nnz}, density={self.density:.4f}, "
-                f"dtype={self.dtype})")
+        return (
+            f"Matrix(shape={self.shape}, format={self.format}, "
+            f"nnz={self.nnz}, density={self.density:.4f}, "
+            f"dtype={self.dtype})"
+        )
 
     def __str__(self) -> str:
         """User-friendly string representation."""
         return self.__repr__()
 
-    def __add__(self, other: Union['Matrix', sp.spmatrix,
-                                   np.ndarray]) -> 'Matrix':
+    def __add__(self, other: Union["Matrix", sp.spmatrix, np.ndarray]) -> "Matrix":
         """Add two matrices."""
         if isinstance(other, Matrix):
             result = self.data + other.data
@@ -567,8 +569,7 @@ class Matrix:
             result = self.data + other
         return Matrix(data=result, format=self._format)
 
-    def __sub__(self, other: Union['Matrix', sp.spmatrix,
-                                   np.ndarray]) -> 'Matrix':
+    def __sub__(self, other: Union["Matrix", sp.spmatrix, np.ndarray]) -> "Matrix":
         """Subtract two matrices."""
         if isinstance(other, Matrix):
             result = self.data - other.data
@@ -577,8 +578,8 @@ class Matrix:
         return Matrix(data=result, format=self._format)
 
     def __mul__(
-            self, other: Union['Matrix', sp.spmatrix, np.ndarray,
-                               float]) -> 'Matrix':
+        self, other: Union["Matrix", sp.spmatrix, np.ndarray, float]
+    ) -> "Matrix":
         """Element-wise multiplication or scalar multiplication."""
         if isinstance(other, Matrix):
             result = self.data.multiply(other.data)
@@ -588,8 +589,7 @@ class Matrix:
             result = self.data.multiply(other)
         return Matrix(data=result, format=self._format)
 
-    def __matmul__(self, other: Union['Matrix', sp.spmatrix,
-                                      np.ndarray]) -> 'Matrix':
+    def __matmul__(self, other: Union["Matrix", sp.spmatrix, np.ndarray]) -> "Matrix":
         """Matrix multiplication."""
         if isinstance(other, Matrix):
             result = self.data @ other.data
@@ -652,8 +652,8 @@ class MatrixHistory:
             Additional logging information.
         """
         # Truncate history if we're not at the end
-        self.states = self.states[:self.current_index + 1]
-        self.operations = self.operations[:self.current_index + 1]
+        self.states = self.states[: self.current_index + 1]
+        self.operations = self.operations[: self.current_index + 1]
 
         self.states.append(matrix.copy())
         self.operations.append(operation)
@@ -722,5 +722,7 @@ class MatrixHistory:
 
     def __repr__(self) -> str:
         """String representation of the history."""
-        return (f"MatrixHistory(states={len(self.states)}, "
-                f"current_index={self.current_index})")
+        return (
+            f"MatrixHistory(states={len(self.states)}, "
+            f"current_index={self.current_index})"
+        )

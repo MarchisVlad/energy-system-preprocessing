@@ -1,8 +1,14 @@
 import pyqtgraph as pg
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QBrush, QColor
-from PyQt6.QtWidgets import (QGraphicsRectItem, QHBoxLayout, QLabel, QScrollBar,
-                             QVBoxLayout, QWidget)
+from PyQt6.QtWidgets import (
+    QGraphicsRectItem,
+    QHBoxLayout,
+    QLabel,
+    QScrollBar,
+    QVBoxLayout,
+    QWidget,
+)
 from pyqtgraph.Qt import QtCore, QtGui, QtWidgets
 from pyqtgraph.Qt.QtWidgets import QToolTip
 
@@ -15,8 +21,8 @@ class BlockMatrixWidget(QWidget):
         super().__init__(parent)
 
         # Set config options BEFORE creating widgets
-        pg.setConfigOption('background', 'w')
-        pg.setConfigOption('foreground', 'k')
+        pg.setConfigOption("background", "w")
+        pg.setConfigOption("foreground", "k")
 
         # Main layout
         main_layout = QVBoxLayout(self)
@@ -24,8 +30,7 @@ class BlockMatrixWidget(QWidget):
 
         # Info label at the top
         self.info_label = QLabel("Matrix: N/A | View: N/A")
-        self.info_label.setStyleSheet(
-            "padding: 5px; background-color: #f0f0f0;")
+        self.info_label.setStyleSheet("padding: 5px; background-color: #f0f0f0;")
         main_layout.addWidget(self.info_label)
 
         # Container for graphics view and scrollbars
@@ -41,7 +46,7 @@ class BlockMatrixWidget(QWidget):
 
         # Graphics view
         self.view = pg.GraphicsLayoutWidget()
-        self.view.setBackground('w')
+        self.view.setBackground("w")
         h_layout.addWidget(self.view)
 
         # Vertical scrollbar
@@ -73,6 +78,9 @@ class BlockMatrixWidget(QWidget):
 
         # Store block overlays
         self.block_overlays = []
+
+        # Store integer overlays
+        self.integer_overlays = []
 
         # Store matrix dimensions
         self.matrix_shape = (0, 0)
@@ -120,9 +128,9 @@ class BlockMatrixWidget(QWidget):
             view_height = cols / viewport_aspect
 
         # Set initial view range (top-left corner)
-        self.plot_item.setRange(xRange=(0, view_width),
-                                yRange=(0, view_height),
-                                padding=0)
+        self.plot_item.setRange(
+            xRange=(0, view_width), yRange=(0, view_height), padding=0
+        )
 
         # Set limits to matrix bounds
         self.plot_item.setLimits(xMin=0, xMax=cols, yMin=0, yMax=rows)
@@ -171,11 +179,12 @@ class BlockMatrixWidget(QWidget):
         new_x_max = value + view_width
 
         # Due to aspect lock, setting X might affect Y, so we recalculate
-        self.plot_item.setRange(xRange=(new_x_min, new_x_max),
-                                yRange=(center_y - view_height / 2,
-                                        center_y + view_height / 2),
-                                padding=0,
-                                update=True)
+        self.plot_item.setRange(
+            xRange=(new_x_min, new_x_max),
+            yRange=(center_y - view_height / 2, center_y + view_height / 2),
+            padding=0,
+            update=True,
+        )
 
         self._updating_from_scrollbar = False
 
@@ -197,11 +206,12 @@ class BlockMatrixWidget(QWidget):
         new_y_min = value
         new_y_max = value + view_height
 
-        self.plot_item.setRange(xRange=(center_x - view_width / 2,
-                                        center_x + view_width / 2),
-                                yRange=(new_y_min, new_y_max),
-                                padding=0,
-                                update=True)
+        self.plot_item.setRange(
+            xRange=(center_x - view_width / 2, center_x + view_width / 2),
+            yRange=(new_y_min, new_y_max),
+            padding=0,
+            update=True,
+        )
 
         self._updating_from_scrollbar = False
 
@@ -230,10 +240,8 @@ class BlockMatrixWidget(QWidget):
         self.h_scrollbar.blockSignals(True)
         self.v_scrollbar.blockSignals(True)
 
-        self.h_scrollbar.setValue(max(0, min(x_min,
-                                             self.h_scrollbar.maximum())))
-        self.v_scrollbar.setValue(max(0, min(y_min,
-                                             self.v_scrollbar.maximum())))
+        self.h_scrollbar.setValue(max(0, min(x_min, self.h_scrollbar.maximum())))
+        self.v_scrollbar.setValue(max(0, min(y_min, self.v_scrollbar.maximum())))
 
         self.h_scrollbar.blockSignals(False)
         self.v_scrollbar.blockSignals(False)
@@ -257,14 +265,21 @@ class BlockMatrixWidget(QWidget):
         y_max = min(self.matrix_shape[0], int(y_range[1]))
 
         # Update label
-        info_text = (f"Matrix: {self.matrix_shape[0]}×{self.matrix_shape[1]} | "
-                     f"View: Rows [{y_min}–{y_max}], Cols [{x_min}–{x_max}]")
+        info_text = (
+            f"Matrix: {self.matrix_shape[0]}×{self.matrix_shape[1]} | "
+            f"View: Rows [{y_min}–{y_max}], Cols [{x_min}–{x_max}]"
+        )
         self.info_label.setText(info_text)
 
     def clear_blocks(self):
         for rect in self.block_overlays:
             self.plot_item.removeItem(rect)
         self.block_overlays.clear()
+
+    def clear_integers(self):
+        for rect in self.integer_overlays:
+            self.plot_item.removeItem(rect)
+        self.integer_overlays.clear()
 
     def highlight_blocks(self, blocks: BlockStructure):
         """Highlight blocks with interactive hover info"""
@@ -296,14 +311,18 @@ class BlockMatrixWidget(QWidget):
             color = color_palette[idx % len(color_palette)]
 
             # Create rectangle from block ranges
-            rect = QGraphicsRectItem(b.col_range[0], b.row_range[0],
-                                     b.col_range[1] - b.col_range[0],
-                                     b.row_range[1] - b.row_range[0])
+            rect = QGraphicsRectItem(
+                b.col_range[0],
+                b.row_range[0],
+                b.col_range[1] - b.col_range[0],
+                b.row_range[1] - b.row_range[0],
+            )
 
             # Set pen (border) and brush (fill) with the cycled color
             rect.setPen(pg.mkPen(color=color, width=2))
-            rect.setBrush(QBrush(QColor(color[0], color[1], color[2],
-                                        80)))  # semi-transparent (alpha=80)
+            rect.setBrush(
+                QBrush(QColor(color[0], color[1], color[2], 80))
+            )  # semi-transparent (alpha=80)
 
             # Enable hover events
             rect.setAcceptHoverEvents(True)
@@ -311,10 +330,12 @@ class BlockMatrixWidget(QWidget):
             # Generate info text from block properties
             row_size = b.row_range[1] - b.row_range[0]
             col_size = b.col_range[1] - b.col_range[0]
-            rect.info_text = (f"Block {idx}\n"
-                              f"Rows: [{b.row_range[0]}, {b.row_range[1]})\n"
-                              f"Cols: [{b.col_range[0]}, {b.col_range[1]})\n"
-                              f"Size: {row_size} × {col_size}")
+            rect.info_text = (
+                f"Block {idx}\n"
+                f"Rows: [{b.row_range[0]}, {b.row_range[1]})\n"
+                f"Cols: [{b.col_range[0]}, {b.col_range[1]})\n"
+                f"Size: {row_size} × {col_size}"
+            )
 
             # Connect hover events
             rect.hoverEnterEvent = self._make_hover_enter(rect)
@@ -322,6 +343,30 @@ class BlockMatrixWidget(QWidget):
 
             self.plot_item.addItem(rect)
             self.block_overlays.append(rect)
+
+    def highlight_integers(self, model):
+        """Highlight columns (variables) that are integers with red hue"""
+        # Remove previous overlays
+        self.clear_integers()
+
+        # Get integer bitmap
+        integers = model.integers
+
+        # Matrix dimensions
+        n_rows, n_cols = self.matrix_shape
+
+        for col in range(n_cols):
+            if integers[col] == 1:
+                # Vertical stripe covering the full row extent for this column.
+                # Scene coords: x=column index, y=row index (matches highlight_blocks).
+                rect = QGraphicsRectItem(col, 0, 1, n_rows)
+
+                # Set red color, semi-transparent
+                rect.setPen(pg.mkPen(color=(255, 0, 0), width=0))  # No border
+                rect.setBrush(QBrush(QColor(255, 0, 0, 50)))  # Red with alpha=50
+
+                self.plot_item.addItem(rect)
+                self.integer_overlays.append(rect)
 
     def _make_hover_enter(self, rect):
 

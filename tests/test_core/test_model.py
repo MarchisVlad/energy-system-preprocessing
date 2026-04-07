@@ -54,6 +54,6 @@ def test_model_constrain_matrix_properties():
     ten_teams_path = MODELS / "formats" / "mps" / "10teams" / "10teams.mps"
     ten_teams_model = Model(path=str(ten_teams_path), format=FileFormat.CPLEXMPS)
 
-    assert sp.issparse(ten_teams_model.A.data), "A should be a sparse matrix"
+    assert sp.issparse(ten_teams_model.A), "A should be a sparse matrix"
     assert ten_teams_model.A.shape == (230, 2025)
     assert ten_teams_model.A.nnz == 12150

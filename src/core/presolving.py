@@ -24,6 +24,7 @@ class PresolvingMethod(Enum):
     Probing = 15
     Sparsify = 16
 
+
 class PresolveStatus(Enum):
     kUnchanged = "unchanged"
     kReduced = "reduced"

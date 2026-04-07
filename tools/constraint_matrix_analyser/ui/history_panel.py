@@ -1,11 +1,20 @@
 from typing import List
 
 from PyQt6.QtCore import Qt
-from PyQt6.QtWidgets import (QComboBox, QDoubleSpinBox, QGroupBox, QHBoxLayout,
-                             QLabel, QPushButton, QScrollArea, QVBoxLayout,
-                             QWidget)
+from PyQt6.QtWidgets import (
+    QComboBox,
+    QDoubleSpinBox,
+    QGroupBox,
+    QHBoxLayout,
+    QLabel,
+    QPushButton,
+    QScrollArea,
+    QVBoxLayout,
+    QWidget,
+)
 
 from src.core.presolving import PresolvingMethod
+from src.presolvers.algorithm import presolve
 
 from ..widgets.history_tab import HistoryTab
 
@@ -30,8 +39,7 @@ class HistoryPanel(QGroupBox):
         self.container_layout = QHBoxLayout(self.container)
         self.container_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
 
-        self.placeholder = QLabel(
-            "No model loaded. Select a model file to begin.")
+        self.placeholder = QLabel("No model loaded. Select a model file to begin.")
         self.container_layout.addWidget(self.placeholder)
 
         scroll.setWidget(self.container)
@@ -47,8 +55,7 @@ class HistoryPanel(QGroupBox):
         controls.addWidget(self.preprocessing_techniques)
 
         self.apply_preprocessing_button = QPushButton("Apply")
-        self.apply_preprocessing_button.clicked.connect(
-            self.apply_preprocessing)
+        self.apply_preprocessing_button.clicked.connect(self.apply_preprocessing)
         controls.addWidget(self.apply_preprocessing_button)
 
         # self.normalize_btn = QPushButton("Normalize")
@@ -78,14 +85,17 @@ class HistoryPanel(QGroupBox):
         # Generate new matrix info (placeholder - simulate changes)
         current_state = self.app.model_history.get_current_state()
         if current_state:
-            _, A = current_state
+            _, model = current_state
 
-            new_matrix = A
+            presolve(
+                model=model,
+                method=PresolvingMethod[self.preprocessing_techniques.currentText()],
+            )
 
             # Add new state
             self.app.model_history.add_state(
-                PresolvingMethod[self.preprocessing_techniques.currentText()],
-                new_matrix)
+                PresolvingMethod[self.preprocessing_techniques.currentText()], model
+            )
             self.update_history()
             self.app.update_matrix_display()
 
@@ -111,7 +121,7 @@ class HistoryPanel(QGroupBox):
             if not state:
                 continue
 
-            is_current = (i == mh.current_index)
+            is_current = i == mh.current_index
             tab = HistoryTab(i, summary, is_current)
             tab.clicked.connect(self.app.on_history_tab_clicked)
             tab.right_clicked.connect(self.app.on_history_tab_right_clicked)

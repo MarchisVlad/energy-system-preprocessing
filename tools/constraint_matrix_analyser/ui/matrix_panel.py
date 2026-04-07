@@ -1,9 +1,18 @@
-from PyQt6.QtWidgets import (QComboBox, QFileDialog, QGroupBox, QHBoxLayout,
-                             QLabel, QPushButton, QTableWidget, QVBoxLayout,
-                             QWidget)
+from PyQt6.QtWidgets import (
+    QComboBox,
+    QFileDialog,
+    QGroupBox,
+    QHBoxLayout,
+    QLabel,
+    QPushButton,
+    QTableWidget,
+    QVBoxLayout,
+    QWidget,
+)
+
+from src.detection.algorithm import detect_block_structure
 
 from ..widgets.block_widget import BlockMatrixWidget
-from src.detection.algorithm import detect_block_structure
 
 
 class MatrixPanel(QWidget):
@@ -46,7 +55,7 @@ class MatrixPanel(QWidget):
 
         detection_info_layout.addWidget(QLabel("Algorithm"))
         self.detection_technique = QComboBox()
-        for technique in ['None', 'rcm', 'spectral']:
+        for technique in ["None", "rcm", "spectral"]:
             self.detection_technique.addItem(technique)
 
         self.detection_technique.currentIndexChanged.connect(self.update_blocks)
@@ -93,39 +102,43 @@ class MatrixPanel(QWidget):
 
         print(self.app.model_history)
         if current_state:
-            _, A = current_state
+            _, model = current_state
 
+            A = model.A
             n_rows, n_cols = A.shape
             self.rows.setText(f"Rows: {n_rows}")
             self.cols.setText(f"Columns: {n_cols}")
             # self.rank.setText(f"Rank: {matrix_rank(A)}")
 
             self.block_matrix_info.set_matrix(A)
+            self.block_matrix_info.highlight_integers(model)
 
         else:
             raise RuntimeError(
-                "Tried updating matrix display without any matrix information.")
+                "Tried updating matrix display without any matrix information."
+            )
 
     def update_blocks(self, index):
         detection_method = self.detection_technique.currentText()
 
-        if detection_method == 'None':
+        if detection_method == "None":
             self.block_matrix_info.clear_blocks()
             return
 
         current_state = self.app.model_history.get_current_state()
         print(self.app.model_history)
         if current_state:
-            _, A = current_state
+            _, model = current_state
 
-            blocks = detect_block_structure(
-                A, detection_method)
+            A = model.A
+            blocks = detect_block_structure(A, detection_method)
 
             self.block_matrix_info.highlight_blocks(blocks)
 
         else:
             raise RuntimeError(
-                "Tried updating blocks display without any matrix information.")
+                "Tried updating blocks display without any matrix information."
+            )
 
     def export_matrix(self):
         mh = self.app.model_history
@@ -138,8 +151,23 @@ class MatrixPanel(QWidget):
             return
 
         file_name, _ = QFileDialog.getSaveFileName(
-            self, "Export Matrix", "",
-            "CSV Files (*.csv);;Text Files (*.txt);;All Files (*)")
+            self,
+            "Export Matrix",
+            "",
+            "CSV Files (*.csv);;Text Files (*.txt);;All Files (*)",
+        )
+
+        if file_name:
+            print(f"Exporting matrix to: {file_name}")
+            print("Export completed!")
+            return
+
+        file_name, _ = QFileDialog.getSaveFileName(
+            self,
+            "Export Matrix",
+            "",
+            "CSV Files (*.csv);;Text Files (*.txt);;All Files (*)",
+        )
 
         if file_name:
             print(f"Exporting matrix to: {file_name}")

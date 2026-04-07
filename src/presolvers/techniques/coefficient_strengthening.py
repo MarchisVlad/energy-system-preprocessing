@@ -1,255 +1,227 @@
+from __future__ import annotations
+
 import math
-from abc import ABC, abstractmethod
-from enum import Enum
+from typing import Dict, Tuple
 
 import mip
-import numpy as np
-import scipy.sparse as sp
+from mip import Constr, Var
 
-from src.core.block import BlockStructure
 from src.core.model import Model
 from src.presolvers.algorithm import PresolveAlgorithm
-from src.core.presolving import PresolveStatus
 
 
 class CoefficientStrengthening(PresolveAlgorithm):
-    """
-    Coefficient strengthening/tightening presolver for MIP problems.
-
-    For each row of the form a^T x <= b (or >= b), if a variable x_j is integer
-    and its coefficient |a_j| > (maxactivity - b), we can tighten a_j down to
-    (maxactivity - b) and adjust the RHS accordingly, without changing the
-    feasible integer set.
-
-    Reference: CoefficientStrengthening.hpp from PaPILO
-    """
-
-    name: str = "coefftightening"
 
     def __init__(self, model: Model):
-        self.model = model
+        assert isinstance(model.model, mip.Model)
+        super().__init__(model)
+        self.name: str = "Coefficient Strengthening"
+        self.mip: mip.Model = model.model
 
-    def presolve(self, **kwargs) -> sp.spmatrix:
+    def presolve(self, max_rounds: int = 1, tol: float = 1e-9):
         """
-        Analyze matrix A and return a presolved matrix.
+        Apply Achterberg-style coefficient tightening.
 
-        Iterates over all rows and applies coefficient tightening where possible.
-        Modifies model.A, model.lhs, model.rhs in place and returns the new A.
+        This implements the single-row, single-variable rule on each one-sided row:
+            a^T x <= b   or   a^T x >= b
+
+        For each integral variable x_k in a row, using the row-wise bound
+        u_iS on the remaining variables:
+            if a_k > 0:
+                d = b - u_iS - a_k * (ub_k - 1)
+                if 0 < d <= a_k:
+                    a_k <- a_k - d
+                    b   <- b - d * ub_k
+
+            if a_k < 0:
+                d = b - u_iS - a_k * (lb_k + 1)
+                if 0 < d <= -a_k:
+                    a_k <- a_k + d
+                    b   <- b + d * lb_k
+
+        Parameters
+        ----------
+        model
+            A Model.
+        max_rounds
+            Number of presolve passes over all constraints.
+        tol
+            Numerical tolerance.
+
+        Returns
+        -------
+        int
+            Total number of coefficient tightenings performed.
         """
-        A = self.model.A  # scipy sparse matrix (num_rows x num_cols), CSR preferred
-        if not sp.isspmatrix_csr(A):
-            A = A.tocsr()
 
-        lhs = np.array(self.model.lhs,
-                       dtype=float)  # lower bounds on rows (or -inf)
-        rhs = np.array(self.model.rhs,
-                       dtype=float)  # upper bounds on rows (or +inf)
-        lb = np.array(self.model.lb, dtype=float)  # variable lower bounds
-        ub = np.array(self.model.ub, dtype=float)  # variable upper bounds
+        total_changes = 0
 
-        # Boolean arrays: which variables are integer or implied integer
-        is_integer = np.array(self.model.is_integer,
-                              dtype=bool)  # shape (num_cols,)
+        for _ in range(max_rounds):
+            round_changes = 0
 
-        num_rows, num_cols = A.shape
-        A_lil = A.tolil()  # use LIL for efficient element-wise modification
+            # iterate over the current constraints and edit them in place
+            # Reverse iteration: removing constr[k] shifts indices k+1..n-1
+            # down by one; reversing ensures unprocessed (lower) indices are
+            # unaffected by any removal that just occurred.
+            for constr in reversed(list(self.mip.constrs)):
+                round_changes += self._tighten_constraint(constr, tol=tol)
 
-        overall_status = PresolveStatus.kUnchanged
+            total_changes += round_changes
 
-        for row_idx in range(num_rows):
-            status = self._tighten_row(row_idx, A_lil, lhs, rhs, lb, ub,
-                                       is_integer)
-            if status == PresolveStatus.kReduced:
-                overall_status = PresolveStatus.kReduced
+            if round_changes == 0:
+                break
 
-        self.model.A = A_lil.tocsr()
-        self.model.lhs = lhs.tolist()
-        self.model.rhs = rhs.tolist()
-        return self.model.A
+        if total_changes > 0:
+            self.model.update_matrix()
 
-    def _tighten_row(
+        return total_changes
+
+    def _tighten_constraint(self, constr: Constr, tol: float = 1e-9) -> int:
+        """
+        Tighten coefficients in a single constraint, in place.
+
+        Returns the number of coefficients tightened in this row.
+        """
+        expr = constr.expr
+        sense = expr.sense
+
+        # python-mip uses "<" for <=, ">" for >=, "=" for equality
+        if sense not in ("<", ">"):
+            return 0  # skip equality rows
+
+        # Extract nonzero coefficients
+        coeffs: Dict[Var, float] = {
+            var: float(coef)
+            for var, coef in expr.expr.items()
+            if abs(float(coef)) > tol
+        }
+
+        if len(coeffs) <= 1:
+            return 0
+
+        # python-mip stores the constraint RHS already accounting for any
+        # constant term in the left-hand expression.
+        rhs = float(constr.rhs)
+
+        # Normalize >= rows to <= rows by multiplying by -1
+        normalized_from_ge = sense == ">"
+        if normalized_from_ge:
+            coeffs = {var: -coef for var, coef in coeffs.items()}
+            rhs = -rhs
+
+        n_changes = 0
+
+        # One sequential pass over the variables in the normalized row
+        for var in list(coeffs.keys()):
+            if not self._is_integral_var(var):
+                continue
+
+            if self._is_fixed(var, tol):
+                continue
+
+            a_k = coeffs[var]
+            if abs(a_k) <= tol:
+                continue
+
+            u_iS, ok = self._max_activity_excluding(coeffs, skip_var=var, tol=tol)
+            if not ok:
+                continue
+
+            if a_k > 0:
+                u_k = float(var.ub)
+                if not math.isfinite(u_k):
+                    continue
+
+                d = rhs - u_iS - a_k * (u_k - 1.0)
+
+                if d <= tol or d > a_k + tol:
+                    continue
+
+                coeffs[var] = a_k - d
+                rhs = rhs - d * u_k
+                n_changes += 1
+
+            else:  # a_k < 0
+                l_k = float(var.lb)
+                if not math.isfinite(l_k):
+                    continue
+
+                d = rhs - u_iS - a_k * (l_k + 1.0)
+
+                if d <= tol or d > (-a_k) + tol:
+                    continue
+
+                coeffs[var] = a_k + d
+                rhs = rhs + d * l_k
+                n_changes += 1
+
+            # Clean tiny numerical residue
+            if abs(coeffs[var]) <= tol:
+                coeffs[var] = 0.0
+
+        if n_changes == 0:
+            return 0
+
+        # Remove numerically zero coefficients
+        coeffs = {var: coef for var, coef in coeffs.items() if abs(coef) > tol}
+
+        # Undo normalization if the original row was >=
+        if normalized_from_ge:
+            coeffs = {var: -coef for var, coef in coeffs.items()}
+            rhs = -rhs
+
+        # python-mip's constr_set_expr is a no-op stub in the CBC backend, so
+        # in-place coefficient modification is impossible.  Replace the row by
+        # removing the old constraint and adding the updated one at the end of
+        # the constraint list (safe because the caller iterates in reverse).
+        lhs = mip.xsum(coef * var for var, coef in coeffs.items())
+        name = constr.name
+        self.mip.remove(constr)
+        if sense == "<":
+            self.mip.add_constr(lhs <= rhs, name=name)
+        else:  # ">"
+            self.mip.add_constr(lhs >= rhs, name=name)
+
+        return n_changes
+
+    def _max_activity_excluding(
         self,
-        row_idx: int,
-        A_lil: sp.lil_matrix,
-        lhs: np.ndarray,
-        rhs: np.ndarray,
-        lb: np.ndarray,
-        ub: np.ndarray,
-        is_integer: np.ndarray,
-    ) -> PresolveStatus:
+        coeffs: Dict[Var, float],
+        skip_var: Var,
+        tol: float = 1e-9,
+    ) -> Tuple[float, bool]:
         """
-        Apply coefficient tightening to a single row.
+        Compute u_iS = max activity of the row excluding skip_var:
+            sum_{j != k} a_j * ub_j   if a_j > 0
+            sum_{j != k} a_j * lb_j   if a_j < 0
 
-        The logic mirrors perform_coefficient_tightening() in the C++ source:
-          1. Skip equality rows (both lhs and rhs finite) and rows with <= 1 nonzero.
-          2. Normalise to a^T x <= b form (multiply by -1 if it is a >= row).
-          3. Compute maxactivity of the normalised row.
-          4. Compute newabscoef = maxactivity - b  (the tightened absolute value).
-          5. For every integer variable whose |coef| > newabscoef, replace the
-             coefficient with ±newabscoef and adjust b to compensate.
-          6. Write back the (possibly scaled) changes to A_lil, lhs/rhs.
+        Returns
+        -------
+        (value, is_finite)
         """
-        row_data = A_lil.getrowview(row_idx).toarray().flatten()
-        nonzero_cols = np.nonzero(row_data)[0]
+        total = 0.0
 
-        row_lhs = lhs[row_idx]
-        row_rhs = rhs[row_idx]
-
-        lhs_inf = math.isinf(row_lhs) and row_lhs < 0  # lhs == -inf
-        rhs_inf = math.isinf(row_rhs) and row_rhs > 0  # rhs == +inf
-
-        # Skip equality rows (both sides finite) — can't tighten these
-        if not lhs_inf and not rhs_inf:
-            return PresolveStatus.kUnchanged
-
-        # Skip rows with 0 or 1 nonzero (nothing useful to tighten)
-        if len(nonzero_cols) <= 1:
-            return PresolveStatus.kUnchanged
-
-        # ------------------------------------------------------------------
-        # Normalise to a^T x <= b.  scale = -1 means original row was >= .
-        # ------------------------------------------------------------------
-        if not lhs_inf:
-            # Row is:  lhs <= a^T x  →  (-a)^T x <= -lhs
-            # maxactivity of normalised row = -minactivity of original row
-            min_act, min_act_ok = self._compute_min_activity(
-                row_data, nonzero_cols, lb, ub)
-            if not min_act_ok:
-                return PresolveStatus.kUnchanged
-            maxact = -min_act
-            b = -row_lhs
-            scale = -1
-        else:
-            # Row is:  a^T x <= rhs  (already normalised)
-            max_act, max_act_ok = self._compute_max_activity(
-                row_data, nonzero_cols, lb, ub)
-            if not max_act_ok:
-                return PresolveStatus.kUnchanged
-            maxact = max_act
-            b = row_rhs
-            scale = 1
-
-        # The tightened absolute coefficient value
-        newabscoef = maxact - b
-        if abs(newabscoef) < 1e-10:
-            newabscoef = 0.0
-        else:
-            ceil_val = math.ceil(newabscoef)
-            if abs(newabscoef - ceil_val) < 1e-6:
-                newabscoef = ceil_val
-
-        # If newabscoef <= 0 every integer coefficient is already at most 0,
-        # nothing to tighten (and the row might already be redundant).
-        if newabscoef < 0:
-            return PresolveStatus.kUnchanged
-
-        # ------------------------------------------------------------------
-        # Collect integer variables whose |coef| (in normalised form) can be
-        # tightened, i.e. |scale * a_j| > newabscoef.
-        # ------------------------------------------------------------------
-        to_tighten = []  # list of (normalised_coef, col_idx)
-
-        for col in nonzero_cols:
-            if not is_integer[col]:
-                continue
-            if lb[col] == ub[col]:
+        for var, coef in coeffs.items():
+            if var is skip_var or abs(coef) <= tol:
                 continue
 
-            norm_coef = row_data[col] * scale  # coef in normalised a^T x <= b
-            if abs(norm_coef) <= newabscoef + 1e-10:
-                continue  # already tight enough
-
-            to_tighten.append([norm_coef, col])
-
-        if not to_tighten:
-            return PresolveStatus.kUnchanged
-
-        # Sanity: maxact must exceed b for the tightening to make sense
-        if not (maxact > b + 1e-10):
-            return PresolveStatus.kUnchanged
-
-        # ------------------------------------------------------------------
-        # Adjust b and replace each qualifying coefficient with ±newabscoef.
-        # The RHS adjustment preserves the set of feasible integer points:
-        #
-        #   positive coef:  b  +=  (newabscoef - a_j) * ub[col]
-        #   negative coef:  b  -=  (newabscoef + a_j) * lb[col]   (a_j < 0)
-        # ------------------------------------------------------------------
-        for entry in to_tighten:
-            norm_coef, col = entry
-            if norm_coef < 0:
-                assert not math.isinf(lb[col]), (
-                    f"Variable {col} has -inf lower bound but negative coef")
-                b -= (newabscoef + norm_coef) * lb[col]
-                entry[0] = -newabscoef
+            if coef > 0.0:
+                bound = float(var.ub)
+                if not math.isfinite(bound):
+                    return 0.0, False
+                total += coef * bound
             else:
-                assert not math.isinf(ub[col]), (
-                    f"Variable {col} has +inf upper bound but positive coef")
-                b += (newabscoef - norm_coef) * ub[col]
-                entry[0] = newabscoef
+                bound = float(var.lb)
+                if not math.isfinite(bound):
+                    return 0.0, False
+                total += coef * bound
 
-        # ------------------------------------------------------------------
-        # Write changes back (un-normalise with scale).
-        # ------------------------------------------------------------------
-        for norm_coef, col in to_tighten:
-            A_lil[row_idx, col] = norm_coef * scale  # original orientation
+        return total, True
 
-        if scale == -1:
-            lhs[row_idx] = -b
-        else:
-            rhs[row_idx] = b
+    def _is_integral_var(self, var: Var) -> bool:
+        """Treat binary and integer variables as integral."""
+        return var.var_type in ("B", "I")
 
-        return PresolveStatus.kReduced
-
-    # ------------------------------------------------------------------
-    # Activity helpers
-    # ------------------------------------------------------------------
-
-    @staticmethod
-    def _compute_max_activity(
-        row: np.ndarray,
-        nonzero_cols: np.ndarray,
-        lb: np.ndarray,
-        ub: np.ndarray,
-    ):
-        """
-        Compute max activity = sum_j { a_j * ub[j] if a_j > 0 else a_j * lb[j] }.
-        Returns (value, is_finite).  Returns (None, False) if any required bound
-        is infinite.
-        """
-        maxact = 0.0
-        for col in nonzero_cols:
-            coef = row[col]
-            if coef > 0:
-                if math.isinf(ub[col]):
-                    return None, False
-                maxact += coef * ub[col]
-            else:
-                if math.isinf(lb[col]):
-                    return None, False
-                maxact += coef * lb[col]
-        return maxact, True
-
-    @staticmethod
-    def _compute_min_activity(
-        row: np.ndarray,
-        nonzero_cols: np.ndarray,
-        lb: np.ndarray,
-        ub: np.ndarray,
-    ):
-        """
-        Compute min activity = sum_j { a_j * lb[j] if a_j > 0 else a_j * ub[j] }.
-        Returns (value, is_finite).
-        """
-        minact = 0.0
-        for col in nonzero_cols:
-            coef = row[col]
-            if coef > 0:
-                if math.isinf(lb[col]):
-                    return None, False
-                minact += coef * lb[col]
-            else:
-                if math.isinf(ub[col]):
-                    return None, False
-                minact += coef * ub[col]
-        return minact, True
+    def _is_fixed(self, var: Var, tol: float = 1e-9) -> bool:
+        """Check whether lb == ub up to tolerance."""
+        return abs(float(var.lb) - float(var.ub)) <= tol

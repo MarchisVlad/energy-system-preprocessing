@@ -2,8 +2,7 @@ import os
 from typing import Optional
 
 from PyQt6.QtCore import Qt
-from PyQt6.QtWidgets import (QApplication, QMainWindow, QSplitter, QVBoxLayout,
-                             QWidget)
+from PyQt6.QtWidgets import QApplication, QMainWindow, QSplitter, QVBoxLayout, QWidget
 
 from src.core.model import Model, ModelHistory
 
@@ -55,13 +54,16 @@ class ConstraintMatrixAnalyzer(QMainWindow):
     def load_model_file(self, file_path: str):
         print(f"Loading model: {file_path}")
 
-        model = Model(file_path)
+        model = Model(path=file_path)
         self.model_history = ModelHistory(model)
 
         self.history_panel.update_history()
         self.matrix_panel.update_matrix()
 
     def on_history_tab_clicked(self, index: int):
+        if not self.model_history:
+            return
+
         self.model_history.current_index = index
         self.history_panel.mark_current(index)
         self.matrix_panel.update_matrix()
@@ -77,7 +79,7 @@ class ConstraintMatrixAnalyzer(QMainWindow):
             state = self.model_history.get_current_state()
             if state:
                 _, matrix_info = state
-                self.matrix_panel.update_matrix(matrix_info)
+                self.matrix_panel.update_matrix()
 
     def update_matrix_display(self):
         self.matrix_panel.update_matrix()
