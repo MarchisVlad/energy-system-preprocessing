@@ -109,41 +109,34 @@ def reorder(A: sp.coo_matrix,
         Dictionary containing information about the reordering (e.g., bandwidth,
         profile, fill-in estimates).
     """
+    # Map each enum to a (class, extra_kwargs) pair so we never store instances
+    # in the map (calling an already-constructed object would fail).
     algorithm_map = {
-        ReorderingAlgorithm.CUTHILL_MCKEE:
-            CuthillMcKeeReorderer,
-        ReorderingAlgorithm.REVERSE_CUTHILL_MCKEE:
-            CuthillMcKeeReorderer(reverse=True),
-        ReorderingAlgorithm.SLOAN:
-            SloanReorderer,
-        ReorderingAlgorithm.AMD:
-            AMDReorderer,
-        ReorderingAlgorithm.MMD:
-            MMDReorderer,
-        ReorderingAlgorithm.NESTED_DISSECTION:
-            NestedDissectionReorderer,
-        ReorderingAlgorithm.KING:
-            KingReorderer,
-        ReorderingAlgorithm.SPECTRAL:
-            SpectralReorderer,
-        ReorderingAlgorithm.NATURAL:
-            NaturalReorderer,
-        ReorderingAlgorithm.RANDOM:
-            RandomReorderer,
+        ReorderingAlgorithm.CUTHILL_MCKEE:        (CuthillMcKeeReorderer, {}),
+        ReorderingAlgorithm.REVERSE_CUTHILL_MCKEE: (CuthillMcKeeReorderer, {"reverse": True}),
+        ReorderingAlgorithm.SLOAN:                (SloanReorderer, {}),
+        ReorderingAlgorithm.AMD:                  (AMDReorderer, {}),
+        ReorderingAlgorithm.MMD:                  (MMDReorderer, {}),
+        ReorderingAlgorithm.NESTED_DISSECTION:    (NestedDissectionReorderer, {}),
+        ReorderingAlgorithm.KING:                 (KingReorderer, {}),
+        ReorderingAlgorithm.SPECTRAL:             (SpectralReorderer, {}),
+        ReorderingAlgorithm.NATURAL:              (NaturalReorderer, {}),
+        ReorderingAlgorithm.RANDOM:               (RandomReorderer, {}),
     }
 
     if algorithm not in algorithm_map:
         raise ValueError(f"Unknown algorithm: {algorithm}")
 
-    reorderer_class = algorithm_map[algorithm]
+    reorderer_class, extra_kwargs = algorithm_map[algorithm]
 
-    # Filter kwargs to only include valid parameters for the specific reorderer
     import inspect
     sig = inspect.signature(reorderer_class.__init__)
     valid_params = set(sig.parameters.keys()) - {'self'}
     filtered_kwargs = {k: v for k, v in kwargs.items() if k in valid_params}
+    filtered_kwargs.update(extra_kwargs)
 
-    return reorderer_class(**filtered_kwargs)
+    reorderer = reorderer_class(**filtered_kwargs)
+    return reorderer.reorder(A, symmetric=symmetric)
 
 
 class Reorderer(ABC):

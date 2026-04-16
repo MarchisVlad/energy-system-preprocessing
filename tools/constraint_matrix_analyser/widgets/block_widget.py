@@ -344,15 +344,22 @@ class BlockMatrixWidget(QWidget):
             self.plot_item.addItem(rect)
             self.block_overlays.append(rect)
 
-    def highlight_integers(self, model):
-        """Highlight columns (variables) that are integers with red hue"""
-        # Remove previous overlays
+    def highlight_integers(self, model, col_perm=None):
+        """Highlight columns (variables) that are integers with a red overlay.
+
+        Parameters
+        ----------
+        model : Model
+            Source of the 0/1 integer flag vector.
+        col_perm : np.ndarray, optional
+            Column permutation currently applied to the displayed matrix.
+            When provided, integers[col_perm] is used so highlights align
+            with the reordered/detected column order.
+        """
         self.clear_integers()
 
-        # Get integer bitmap
-        integers = model.integers
+        integers = model.integers(col_perm)
 
-        # Matrix dimensions
         n_rows, n_cols = self.matrix_shape
 
         for col in range(n_cols):
@@ -360,11 +367,8 @@ class BlockMatrixWidget(QWidget):
                 # Vertical stripe covering the full row extent for this column.
                 # Scene coords: x=column index, y=row index (matches highlight_blocks).
                 rect = QGraphicsRectItem(col, 0, 1, n_rows)
-
-                # Set red color, semi-transparent
-                rect.setPen(pg.mkPen(color=(255, 0, 0), width=0))  # No border
-                rect.setBrush(QBrush(QColor(255, 0, 0, 50)))  # Red with alpha=50
-
+                rect.setPen(pg.mkPen(color=(255, 0, 0), width=0))
+                rect.setBrush(QBrush(QColor(255, 0, 0, 50)))
                 self.plot_item.addItem(rect)
                 self.integer_overlays.append(rect)
 

@@ -49,9 +49,9 @@ def compute_column_ordering_from_rows(
     >>> col_perm = compute_column_ordering_from_rows(A, row_perm)
     >>> A_reordered = A[row_perm, :][:, col_perm]
     """
-    # Convert to COO for efficient column access
-    if not sp.isspmatrix_coo(matrix):
-        matrix = matrix.tocoo()
+    # CSR is required for fancy row indexing and getcol()
+    if not sp.isspmatrix_csr(matrix):
+        matrix = matrix.tocsr()
 
     # Apply row permutation
     matrix_reordered = matrix[row_permutation]

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import math
-from typing import Dict, Tuple
+from typing import Dict, Optional, Tuple
 
 import mip
 from mip import Constr, Var
@@ -59,12 +59,25 @@ class CoefficientStrengthening(PresolveAlgorithm):
         for _ in range(max_rounds):
             round_changes = 0
 
-            # iterate over the current constraints and edit them in place
-            # Reverse iteration: removing constr[k] shifts indices k+1..n-1
-            # down by one; reversing ensures unprocessed (lower) indices are
-            # unaffected by any removal that just occurred.
-            for constr in reversed(list(self.mip.constrs)):
-                round_changes += self._tighten_constraint(constr, tol=tol)
+            # Iterate from the last constraint to the first, accessing each
+            # by its *live* index rather than a pre-captured Constr object.
+            # Removing at index i only shifts rows i+1..n-1, which we have
+            # already visited; rows 0..i-1 are unaffected and are accessed
+            # correctly on the next decrement.
+            i = len(self.mip.constrs) - 1
+            while i >= 0:
+                constr = self.mip.constrs[i]
+                result = self._analyse_constraint(constr, tol=tol)
+                if result is not None:
+                    _, name, coeffs, rhs, sense = result
+                    self.mip.remove(constr)
+                    lhs = mip.xsum(coef * var for var, coef in coeffs.items())
+                    if sense == "<":
+                        self.mip.add_constr(lhs <= rhs, name=name)
+                    else:
+                        self.mip.add_constr(lhs >= rhs, name=name)
+                    round_changes += 1
+                i -= 1
 
             total_changes += round_changes
 
@@ -76,18 +89,21 @@ class CoefficientStrengthening(PresolveAlgorithm):
 
         return total_changes
 
-    def _tighten_constraint(self, constr: Constr, tol: float = 1e-9) -> int:
+    def _analyse_constraint(
+        self, constr: Constr, tol: float = 1e-9
+    ) -> Optional[Tuple[Constr, str, Dict[Var, float], float, str]]:
         """
-        Tighten coefficients in a single constraint, in place.
+        Compute tightened coefficients for *constr* without modifying the model.
 
-        Returns the number of coefficients tightened in this row.
+        Returns ``(constr, new_coeffs, new_rhs, sense)`` if any coefficient was
+        tightened, or ``None`` if the constraint needs no change.
         """
         expr = constr.expr
         sense = expr.sense
 
         # python-mip uses "<" for <=, ">" for >=, "=" for equality
         if sense not in ("<", ">"):
-            return 0  # skip equality rows
+            return None  # skip equality rows
 
         # Extract nonzero coefficients
         coeffs: Dict[Var, float] = {
@@ -97,10 +113,8 @@ class CoefficientStrengthening(PresolveAlgorithm):
         }
 
         if len(coeffs) <= 1:
-            return 0
+            return None
 
-        # python-mip stores the constraint RHS already accounting for any
-        # constant term in the left-hand expression.
         rhs = float(constr.rhs)
 
         # Normalize >= rows to <= rows by multiplying by -1
@@ -111,7 +125,6 @@ class CoefficientStrengthening(PresolveAlgorithm):
 
         n_changes = 0
 
-        # One sequential pass over the variables in the normalized row
         for var in list(coeffs.keys()):
             if not self._is_integral_var(var):
                 continue
@@ -160,7 +173,7 @@ class CoefficientStrengthening(PresolveAlgorithm):
                 coeffs[var] = 0.0
 
         if n_changes == 0:
-            return 0
+            return None
 
         # Remove numerically zero coefficients
         coeffs = {var: coef for var, coef in coeffs.items() if abs(coef) > tol}
@@ -170,19 +183,7 @@ class CoefficientStrengthening(PresolveAlgorithm):
             coeffs = {var: -coef for var, coef in coeffs.items()}
             rhs = -rhs
 
-        # python-mip's constr_set_expr is a no-op stub in the CBC backend, so
-        # in-place coefficient modification is impossible.  Replace the row by
-        # removing the old constraint and adding the updated one at the end of
-        # the constraint list (safe because the caller iterates in reverse).
-        lhs = mip.xsum(coef * var for var, coef in coeffs.items())
-        name = constr.name
-        self.mip.remove(constr)
-        if sense == "<":
-            self.mip.add_constr(lhs <= rhs, name=name)
-        else:  # ">"
-            self.mip.add_constr(lhs >= rhs, name=name)
-
-        return n_changes
+        return constr, constr.name, coeffs, rhs, sense
 
     def _max_activity_excluding(
         self,

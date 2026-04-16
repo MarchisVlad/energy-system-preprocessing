@@ -199,13 +199,21 @@ class Model:
         # return self._A[1:][1:] if without_objective else self._A
         return self._A
 
-    @property
-    def integers(self, reordering: np.ndarray = np.empty(0, dtype=int)) -> np.ndarray:
+    def integers(self, col_perm: np.ndarray = None) -> np.ndarray:
+        """Return the 0/1 integer-variable indicator vector.
+
+        Parameters
+        ----------
+        col_perm : np.ndarray, optional
+            Column permutation (as returned by apply_reordering or
+            detect_block_structure). When provided, returns the integers
+            vector reindexed to match the permuted column order.
+        """
         if self._integers is None:
             raise ValueError("Model integers are not set.")
 
-        if len(reordering) > 0:
-            return self._integers[reordering]
+        if col_perm is not None:
+            return self._integers[col_perm]
 
         return self._integers
 

@@ -5,7 +5,7 @@ import mip
 import scipy.sparse as sp
 
 from src.core.model import Model
-from src.core.presolving import Presolver, PresolvingMethod
+from src.core.presolving import PresolvingMethod
 
 
 class PresolveAlgorithm(ABC):
@@ -27,10 +27,26 @@ class PresolveAlgorithm(ABC):
         pass
 
 
+def _resolve_algorithm(method: PresolvingMethod) -> type[PresolveAlgorithm]:
+    """Return the algorithm class for *method*, importing it lazily."""
+    if method == PresolvingMethod.CoeffTightening:
+        from src.presolvers.techniques.coefficient_strengthening import CoefficientStrengthening
+        return CoefficientStrengthening
+    if method == PresolvingMethod.Propagation:
+        from src.presolvers.techniques.constraint_propagation import ConstraintPropagation
+        return ConstraintPropagation
+    if method == PresolvingMethod.FixContinuous:
+        from src.presolvers.techniques.fix_continuous import FixContinuous
+        return FixContinuous
+    if method == PresolvingMethod.DualFix:
+        from src.presolvers.techniques.dual_fix import DualFix
+        return DualFix
+    raise ValueError(f"Unknown/Unimplemented presolve method: {method}")
+
+
 def presolve(
     model: Model,
     method: PresolvingMethod,
-    presolver: Presolver = Presolver.Static,
     **kwargs,
 ) -> Model:
     """
@@ -40,23 +56,11 @@ def presolve(
     ----------
     method : PresolvingMethod
         The presolve method to apply.
-    presolver : Presolver.Static
-        The presolver instance to use for applying the method.
     **kwargs
         Additional keyword arguments to pass to the presolver method.
     """
-
     if method == "None":
         return model
 
-    elif method == PresolvingMethod.CoeffTightening:
-        from src.presolvers.techniques.coefficient_strengthening import (
-            CoefficientStrengthening,
-        )
-
-        algorithm = CoefficientStrengthening(model)
-        algorithm.presolve(**kwargs)
-        return model
-
-    else:
-        raise ValueError(f"Unknown/Unimplemented presolve method: {method}")
+    _resolve_algorithm(method)(model).presolve(**kwargs)
+    return model
