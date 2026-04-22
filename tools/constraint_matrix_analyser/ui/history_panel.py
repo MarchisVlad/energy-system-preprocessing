@@ -13,8 +13,9 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from src.core.presolving import PresolvingMethod
-from src.presolvers.algorithm import presolve
+from src.core.presolving import Presolver, PresolvingMethod
+from src.presolvers.algorithm import presolve as python_presolve
+from src.presolvers.papilo_handler import presolve as papilo_presolve
 
 from ..widgets.history_tab import HistoryTab
 
@@ -46,12 +47,17 @@ class HistoryPanel(QGroupBox):
         layout.addWidget(scroll)
 
         controls = QHBoxLayout()
-        controls.addWidget(QLabel("Preprocessing Technique:"))
 
+        controls.addWidget(QLabel("Presolver:"))
+        self.presolver_selector = QComboBox()
+        for p in Presolver:
+            self.presolver_selector.addItem(p.name)
+        controls.addWidget(self.presolver_selector)
+
+        controls.addWidget(QLabel("Technique:"))
         self.preprocessing_techniques = QComboBox()
         for method in PresolvingMethod:
             self.preprocessing_techniques.addItem(method.name)
-
         controls.addWidget(self.preprocessing_techniques)
 
         self.apply_preprocessing_button = QPushButton("Apply")
@@ -87,15 +93,14 @@ class HistoryPanel(QGroupBox):
         if current_state:
             _, model = current_state
 
-            presolve(
-                model=model,
-                method=PresolvingMethod[self.preprocessing_techniques.currentText()],
-            )
+            method = PresolvingMethod[self.preprocessing_techniques.currentText()]
+            presolver = Presolver[self.presolver_selector.currentText()]
+            _presolve = papilo_presolve if presolver == Presolver.PaPILO else python_presolve
+
+            model = _presolve(model=model, method=method)
 
             # Add new state
-            self.app.model_history.add_state(
-                PresolvingMethod[self.preprocessing_techniques.currentText()], model
-            )
+            self.app.model_history.add_state(method, model)
             self.update_history()
             self.app.update_matrix_display()
 

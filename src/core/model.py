@@ -8,6 +8,10 @@ Notes
     and facilitate translation between mip.Model and gp.Model specific methods.
 """
 
+import contextlib
+import ctypes
+import os
+import sys
 import tempfile
 import warnings
 from enum import Enum
@@ -22,6 +26,31 @@ import scipy.sparse as sp
 from src.core.block import BlockStructure
 from src.core.matrix import Matrix, MatrixFormat
 from src.core.presolving import Presolver, PresolvingMethod
+
+# Load libc once
+try:
+    _libc = ctypes.CDLL(None)  # Linux/macOS
+except OSError:
+    _libc = ctypes.CDLL("msvcrt")  # Windows fallback
+
+
+@contextlib.contextmanager
+def _suppress_stdout():
+    """Suppress C-level stdout output (e.g., from CBC/COIN solver)."""
+    sys.stdout.flush()
+    _libc.fflush(None)  # flush all C stdio streams
+
+    saved_fd = os.dup(1)
+    devnull_fd = os.open(os.devnull, os.O_WRONLY)
+    os.dup2(devnull_fd, 1)
+    os.close(devnull_fd)
+    try:
+        yield
+    finally:
+        sys.stdout.flush()
+        _libc.fflush(None)  # flush CBC's buffered output into /dev/null
+        os.dup2(saved_fd, 1)
+        os.close(saved_fd)
 
 
 class Sense(Enum):
@@ -172,12 +201,12 @@ class Model:
                     format = FileFormat.CPLEXLP
                 else:
                     raise ValueError(
-                        "File format must be specified when loading from path"
-                    )
+                        "File format must be specified when loading from path")
 
             if format == FileFormat.CPLEXMPS:
                 self.model = mip.Model()
-                self.model.read(path=self.path)
+                with _suppress_stdout():
+                    self.model.read(path=self.path)
 
             elif format is None:
                 # TODO: Handle initialisation for other formats.
@@ -243,13 +272,11 @@ class Model:
             raise RuntimeError(
                 "Attempted to convert a model but the "
                 "self.model attribute is not set. Probably caused by "
-                "initialisation with just the matrix component."
-            )
+                "initialisation with just the matrix component.")
 
         if isinstance(self.model, type):
-            warnings.warn(
-                f"Model is already in the desired format: {type}", UserWarning
-            )
+            warnings.warn(f"Model is already in the desired format: {type}",
+                          UserWarning)
 
         conversion_map = {
             mip.Model: lambda m: m._to_mip(),
@@ -262,7 +289,9 @@ class Model:
         if isinstance(self.model, gp.Model):
             with tempfile.TemporaryDirectory() as tempdir:
                 options = gp.ConvertOptions(GAMSObjVar="obj")
-                self.model.convert(tempdir, gp.FileFormat.FixedMPS, options=options)
+                self.model.convert(tempdir,
+                                   gp.FileFormat.FixedMPS,
+                                   options=options)
                 self.model = mip.Model()
                 self.model.read(path=str(Path(tempdir) / "fixed.MPS"))
                 self._A = self._extract_matrix()
@@ -317,10 +346,8 @@ class Model:
         """
         if isinstance(self.model, mip.Model):
             return np.fromiter(
-                (
-                    1 if var.var_type in (mip.BINARY, mip.INTEGER) else 0
-                    for var in self.model.vars
-                ),
+                (1 if var.var_type in (mip.BINARY, mip.INTEGER) else 0
+                 for var in self.model.vars),
                 dtype=np.int8,
                 count=len(self.model.vars),
             )
@@ -332,7 +359,8 @@ class Model:
             integer_like = {"binary", "integer", "semiint"}
 
             return np.fromiter(
-                (1 if str(var.type).lower() in integer_like else 0 for var in vars_),
+                (1 if str(var.type).lower() in integer_like else 0
+                 for var in vars_),
                 dtype=np.int8,
                 count=len(vars_),
             )
@@ -439,11 +467,12 @@ class ModelHistory:
         -------
             A `ModelHistory` object.
         """
-        self.states: list[Tuple[Optional[PresolvingMethod], Model]] = [(None, model)]
+        self.states: list[Tuple[Optional[PresolvingMethod],
+                                Model]] = [(None, model)]
         self.current_index: int = len(self.states) - 1
 
     def add_state(self, step: Optional[PresolvingMethod], model: Model):
-        self.states = self.states[: self.current_index + 1]
+        self.states = self.states[:self.current_index + 1]
         self.states.append((step, model))
         self.current_index = len(self.states) - 1
 
