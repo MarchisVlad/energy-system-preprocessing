@@ -27,7 +27,8 @@ def handle_presolve(filename: str, methods: list[str]):
         print(f"Attempting to presolve {model} using {presolving_method}.")
 
         print(
-            f"Matrix has {model.A.shape[0]} rows, {model.A.shape[1]} columns and {model.A.getnnz()} nonzeroes."
+            f"Matrix has {model.A.shape[0]} rows, {model.A.shape[1]} columns and {model.A.getnnz()} nonzeroes.",
+            f"Model has {len(model.model.vars)} variables and {len(model.model.constrs)} constraints. "
         )
 
         model = presolve(model=model, method=presolving_method)
@@ -35,7 +36,8 @@ def handle_presolve(filename: str, methods: list[str]):
         print("PRESOLVE SUCCESSFUL")
 
         print(
-            f"Matrix has {model.A.shape[0]} rows, {model.A.shape[1]} columns and {model.A.getnnz()} nonzeroes."
+            f"Matrix has {model.A.shape[0]} rows, {model.A.shape[1]} columns and {model.A.getnnz()} nonzeroes.",
+            f"Model has {len(model.model.vars)} variables and {len(model.model.constrs)} constraints. "
         )
 
 

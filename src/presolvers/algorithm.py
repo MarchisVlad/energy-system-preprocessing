@@ -30,10 +30,12 @@ class PresolveAlgorithm(ABC):
 def _resolve_algorithm(method: PresolvingMethod) -> type[PresolveAlgorithm]:
     """Return the algorithm class for *method*, importing it lazily."""
     if method == PresolvingMethod.CoeffTightening:
-        from src.presolvers.techniques.coefficient_strengthening import CoefficientStrengthening
+        from src.presolvers.techniques.coefficient_strengthening import \
+            CoefficientStrengthening
         return CoefficientStrengthening
     if method == PresolvingMethod.Propagation:
-        from src.presolvers.techniques.constraint_propagation import ConstraintPropagation
+        from src.presolvers.techniques.constraint_propagation import \
+            ConstraintPropagation
         return ConstraintPropagation
     if method == PresolvingMethod.FixContinuous:
         from src.presolvers.techniques.fix_continuous import FixContinuous
@@ -41,6 +43,9 @@ def _resolve_algorithm(method: PresolvingMethod) -> type[PresolveAlgorithm]:
     if method == PresolvingMethod.DualFix:
         from src.presolvers.techniques.dual_fix import DualFix
         return DualFix
+    if method == PresolvingMethod.Sparsify:
+        from src.presolvers.techniques.sparsify import Sparsify
+        return Sparsify
     raise ValueError(f"Unknown/Unimplemented presolve method: {method}")
 
 

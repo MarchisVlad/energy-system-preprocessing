@@ -58,26 +58,35 @@ class CoefficientStrengthening(PresolveAlgorithm):
 
         for _ in range(max_rounds):
             round_changes = 0
+            changes: list[tuple[int, str, Dict[Var, float], float, str]] = []
 
-            # Iterate from the last constraint to the first, accessing each
-            # by its *live* index rather than a pre-captured Constr object.
-            # Removing at index i only shifts rows i+1..n-1, which we have
-            # already visited; rows 0..i-1 are unaffected and are accessed
-            # correctly on the next decrement.
-            i = len(self.mip.constrs) - 1
-            while i >= 0:
-                constr = self.mip.constrs[i]
+            # Analyze all constraints first, then apply any modifications in a
+            # separate pass. This avoids mutating the model while iterating
+            # over its live constraint list, which can cause row-index issues
+            # in the underlying CBC backend.
+            constraints = list(self.mip.constrs)
+            for i, constr in enumerate(constraints):
                 result = self._analyse_constraint(constr, tol=tol)
                 if result is not None:
                     _, name, coeffs, rhs, sense = result
+                    changes.append((i, name, coeffs, rhs, sense))
+
+            if changes:
+                # Remove modified rows in reverse order to preserve valid row
+                # indices while deleting from the original model.
+                for i, name, coeffs, rhs, sense in reversed(changes):
+                    constr = constraints[i]
                     self.mip.remove(constr)
+
+                # Re-add modified rows after all deletions are complete.
+                for _, name, coeffs, rhs, sense in changes:
                     lhs = mip.xsum(coef * var for var, coef in coeffs.items())
                     if sense == "<":
                         self.mip.add_constr(lhs <= rhs, name=name)
                     else:
                         self.mip.add_constr(lhs >= rhs, name=name)
-                    round_changes += 1
-                i -= 1
+
+                round_changes = len(changes)
 
             total_changes += round_changes
 

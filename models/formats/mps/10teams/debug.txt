@@ -1,0 +1,864 @@
+PaPILO version 3.0.1 [mode: optimized][Solvers: none][GitHash: 83660e41]
+Copyright (C) 2020-2026 Zuse Institute Berlin (ZIB)
+
+External libraries: 
+  Boost    1.78.0 	 (https://www.boost.org/)
+  TBB      2021.11  	 Thread building block https://github.com/oneapi-src/oneTBB developed by Intel
+  GMP      6.3.0  	 GNU Multiple Precision Arithmetic Library developed by T. Granlund (gmplib.org)
+
+reading took 0.0186 seconds
+Numerical Statistics:
+ Matrix range    [1e+00,1e+00]
+ Objective range [2e+00,9e+01]
+ Bounds range    [1e+00,1e+00]
+ RHS range       [1e+00,2e+00]
+ Dynamism Variables: 1e+00
+ Dynamism Rows     : 1e+00
+set message.verbosity = 4
+
+starting presolve of problem 10teams.mps with dual-postsolve de-activated
+  rows:     230
+  columns:  2025
+  int. columns:  1800
+  cont. columns:  225
+  nonzeros: 12150
+
+round 0   ( Trivial  ):  225 del cols,   15 del rows,    0 chg bounds,    0 chg sides,    0 chg coeffs,    0 tsx applied,    0 tsx conflicts
+Presolver propagation applying 
+row 95 col -13 val 0
+tsx
+row -5 col 225 val 0
+tsx
+row 95 col -13 val 0
+tsx
+row -5 col 270 val 0
+tsx
+row 95 col -13 val 0
+tsx
+row -5 col 315 val 0
+tsx
+row 95 col -13 val 0
+tsx
+row -5 col 360 val 0
+tsx
+row 95 col -13 val 0
+tsx
+row -5 col 405 val 0
+tsx
+row 95 col -13 val 0
+tsx
+row -5 col 450 val 0
+tsx
+row 95 col -13 val 0
+tsx
+row -5 col 495 val 0
+tsx
+row 95 col -13 val 0
+tsx
+row -5 col 540 val 0
+tsx
+row 95 col -13 val 0
+tsx
+row -5 col 585 val 0
+tsx
+row 95 col -13 val 0
+tsx
+row -5 col 630 val 0
+tsx
+row 95 col -13 val 0
+tsx
+row -5 col 675 val 0
+tsx
+row 95 col -13 val 0
+tsx
+row -5 col 720 val 0
+tsx
+row 95 col -13 val 0
+tsx
+row -5 col 765 val 0
+tsx
+row 95 col -13 val 0
+tsx
+row -5 col 810 val 0
+tsx
+row 95 col -13 val 0
+tsx
+row -5 col 855 val 0
+tsx
+row 95 col -13 val 0
+tsx
+row -5 col 900 val 0
+tsx
+row 95 col -13 val 0
+tsx
+row -5 col 945 val 0
+tsx
+row 95 col -13 val 0
+tsx
+row -5 col 990 val 0
+tsx
+row 95 col -13 val 0
+tsx
+row -5 col 1035 val 0
+tsx
+row 95 col -13 val 0
+tsx
+row -5 col 1080 val 0
+tsx
+row 95 col -13 val 0
+tsx
+row -5 col 1125 val 0
+tsx
+row 95 col -13 val 0
+tsx
+row -5 col 1170 val 0
+tsx
+row 95 col -13 val 0
+tsx
+row -5 col 1215 val 0
+tsx
+row 95 col -13 val 0
+tsx
+row -5 col 1260 val 0
+tsx
+row 95 col -13 val 0
+tsx
+row -5 col 1305 val 0
+tsx
+row 95 col -13 val 0
+tsx
+row -5 col 1350 val 0
+tsx
+row 95 col -13 val 0
+tsx
+row -5 col 1395 val 0
+tsx
+row 95 col -13 val 0
+tsx
+row -5 col 1440 val 0
+tsx
+row 95 col -13 val 0
+tsx
+row -5 col 1485 val 0
+tsx
+row 95 col -13 val 0
+tsx
+row -5 col 1530 val 0
+tsx
+row 95 col -13 val 0
+tsx
+row -5 col 1575 val 0
+tsx
+row 95 col -13 val 0
+tsx
+row -5 col 1620 val 0
+tsx
+row 95 col -13 val 0
+tsx
+row -5 col 1665 val 0
+tsx
+row 95 col -13 val 0
+tsx
+row -5 col 1710 val 0
+tsx
+row 95 col -13 val 0
+tsx
+row -5 col 1755 val 0
+tsx
+row 95 col -13 val 0
+tsx
+row -5 col 1800 val 0
+tsx
+row 95 col -13 val 0
+tsx
+row -5 col 1845 val 0
+tsx
+row 95 col -13 val 0
+tsx
+row -5 col 1890 val 0
+tsx
+row 95 col -13 val 0
+tsx
+row -5 col 1935 val 0
+tsx
+row 95 col -13 val 0
+tsx
+row -5 col 1980 val 0
+tsx
+row 112 col -13 val 0
+tsx
+row -5 col 230 val 0
+tsx
+row 112 col -13 val 0
+tsx
+row -5 col 275 val 0
+tsx
+row 112 col -13 val 0
+tsx
+row -5 col 320 val 0
+tsx
+row 112 col -13 val 0
+tsx
+row -5 col 365 val 0
+tsx
+row 112 col -13 val 0
+tsx
+row -5 col 410 val 0
+tsx
+row 112 col -13 val 0
+tsx
+row -5 col 455 val 0
+tsx
+row 112 col -13 val 0
+tsx
+row -5 col 500 val 0
+tsx
+row 112 col -13 val 0
+tsx
+row -5 col 545 val 0
+tsx
+row 112 col -13 val 0
+tsx
+row -5 col 590 val 0
+tsx
+row 112 col -13 val 0
+tsx
+row -5 col 635 val 0
+tsx
+row 112 col -13 val 0
+tsx
+row -5 col 680 val 0
+tsx
+row 112 col -13 val 0
+tsx
+row -5 col 725 val 0
+tsx
+row 112 col -13 val 0
+tsx
+row -5 col 770 val 0
+tsx
+row 112 col -13 val 0
+tsx
+row -5 col 815 val 0
+tsx
+row 112 col -13 val 0
+tsx
+row -5 col 860 val 0
+tsx
+row 112 col -13 val 0
+tsx
+row -5 col 905 val 0
+tsx
+row 112 col -13 val 0
+tsx
+row -5 col 950 val 0
+tsx
+row 112 col -13 val 0
+tsx
+row -5 col 995 val 0
+tsx
+row 112 col -13 val 0
+tsx
+row -5 col 1040 val 0
+tsx
+row 112 col -13 val 0
+tsx
+row -5 col 1085 val 0
+tsx
+row 112 col -13 val 0
+tsx
+row -5 col 1130 val 0
+tsx
+row 112 col -13 val 0
+tsx
+row -5 col 1175 val 0
+tsx
+row 112 col -13 val 0
+tsx
+row -5 col 1220 val 0
+tsx
+row 112 col -13 val 0
+tsx
+row -5 col 1265 val 0
+tsx
+row 112 col -13 val 0
+tsx
+row -5 col 1310 val 0
+tsx
+row 112 col -13 val 0
+tsx
+row -5 col 1355 val 0
+tsx
+row 112 col -13 val 0
+tsx
+row -5 col 1400 val 0
+tsx
+row 112 col -13 val 0
+tsx
+row -5 col 1445 val 0
+tsx
+row 112 col -13 val 0
+tsx
+row -5 col 1490 val 0
+tsx
+row 112 col -13 val 0
+tsx
+row -5 col 1535 val 0
+tsx
+row 112 col -13 val 0
+tsx
+row -5 col 1580 val 0
+tsx
+row 112 col -13 val 0
+tsx
+row -5 col 1625 val 0
+tsx
+row 112 col -13 val 0
+tsx
+row -5 col 1670 val 0
+tsx
+row 112 col -13 val 0
+tsx
+row -5 col 1715 val 0
+tsx
+row 112 col -13 val 0
+tsx
+row -5 col 1760 val 0
+tsx
+row 112 col -13 val 0
+tsx
+row -5 col 1805 val 0
+tsx
+row 112 col -13 val 0
+tsx
+row -5 col 1850 val 0
+tsx
+row 112 col -13 val 0
+tsx
+row -5 col 1895 val 0
+tsx
+row 112 col -13 val 0
+tsx
+row -5 col 1940 val 0
+tsx
+row 112 col -13 val 0
+tsx
+row -5 col 1985 val 0
+tsx
+row 125 col -13 val 0
+tsx
+row -5 col 239 val 0
+tsx
+row 125 col -13 val 0
+tsx
+row -5 col 284 val 0
+tsx
+row 125 col -13 val 0
+tsx
+row -5 col 329 val 0
+tsx
+row 125 col -13 val 0
+tsx
+row -5 col 374 val 0
+tsx
+row 125 col -13 val 0
+tsx
+row -5 col 419 val 0
+tsx
+row 125 col -13 val 0
+tsx
+row -5 col 464 val 0
+tsx
+row 125 col -13 val 0
+tsx
+row -5 col 509 val 0
+tsx
+row 125 col -13 val 0
+tsx
+row -5 col 554 val 0
+tsx
+row 125 col -13 val 0
+tsx
+row -5 col 599 val 0
+tsx
+row 125 col -13 val 0
+tsx
+row -5 col 644 val 0
+tsx
+row 125 col -13 val 0
+tsx
+row -5 col 689 val 0
+tsx
+row 125 col -13 val 0
+tsx
+row -5 col 734 val 0
+tsx
+row 125 col -13 val 0
+tsx
+row -5 col 779 val 0
+tsx
+row 125 col -13 val 0
+tsx
+row -5 col 824 val 0
+tsx
+row 125 col -13 val 0
+tsx
+row -5 col 869 val 0
+tsx
+row 125 col -13 val 0
+tsx
+row -5 col 914 val 0
+tsx
+row 125 col -13 val 0
+tsx
+row -5 col 959 val 0
+tsx
+row 125 col -13 val 0
+tsx
+row -5 col 1004 val 0
+tsx
+row 125 col -13 val 0
+tsx
+row -5 col 1049 val 0
+tsx
+row 125 col -13 val 0
+tsx
+row -5 col 1094 val 0
+tsx
+row 125 col -13 val 0
+tsx
+row -5 col 1139 val 0
+tsx
+row 125 col -13 val 0
+tsx
+row -5 col 1184 val 0
+tsx
+row 125 col -13 val 0
+tsx
+row -5 col 1229 val 0
+tsx
+row 125 col -13 val 0
+tsx
+row -5 col 1274 val 0
+tsx
+row 125 col -13 val 0
+tsx
+row -5 col 1319 val 0
+tsx
+row 125 col -13 val 0
+tsx
+row -5 col 1364 val 0
+tsx
+row 125 col -13 val 0
+tsx
+row -5 col 1409 val 0
+tsx
+row 125 col -13 val 0
+tsx
+row -5 col 1454 val 0
+tsx
+row 125 col -13 val 0
+tsx
+row -5 col 1499 val 0
+tsx
+row 125 col -13 val 0
+tsx
+row -5 col 1544 val 0
+tsx
+row 125 col -13 val 0
+tsx
+row -5 col 1589 val 0
+tsx
+row 125 col -13 val 0
+tsx
+row -5 col 1634 val 0
+tsx
+row 125 col -13 val 0
+tsx
+row -5 col 1679 val 0
+tsx
+row 125 col -13 val 0
+tsx
+row -5 col 1724 val 0
+tsx
+row 125 col -13 val 0
+tsx
+row -5 col 1769 val 0
+tsx
+row 125 col -13 val 0
+tsx
+row -5 col 1814 val 0
+tsx
+row 125 col -13 val 0
+tsx
+row -5 col 1859 val 0
+tsx
+row 125 col -13 val 0
+tsx
+row -5 col 1904 val 0
+tsx
+row 125 col -13 val 0
+tsx
+row -5 col 1949 val 0
+tsx
+row 125 col -13 val 0
+tsx
+row -5 col 1994 val 0
+tsx
+row 134 col -13 val 0
+tsx
+row -5 col 252 val 0
+tsx
+row 134 col -13 val 0
+tsx
+row -5 col 297 val 0
+tsx
+row 134 col -13 val 0
+tsx
+row -5 col 342 val 0
+tsx
+row 134 col -13 val 0
+tsx
+row -5 col 387 val 0
+tsx
+row 134 col -13 val 0
+tsx
+row -5 col 432 val 0
+tsx
+row 134 col -13 val 0
+tsx
+row -5 col 477 val 0
+tsx
+row 134 col -13 val 0
+tsx
+row -5 col 522 val 0
+tsx
+row 134 col -13 val 0
+tsx
+row -5 col 567 val 0
+tsx
+row 134 col -13 val 0
+tsx
+row -5 col 612 val 0
+tsx
+row 134 col -13 val 0
+tsx
+row -5 col 657 val 0
+tsx
+row 134 col -13 val 0
+tsx
+row -5 col 702 val 0
+tsx
+row 134 col -13 val 0
+tsx
+row -5 col 747 val 0
+tsx
+row 134 col -13 val 0
+tsx
+row -5 col 792 val 0
+tsx
+row 134 col -13 val 0
+tsx
+row -5 col 837 val 0
+tsx
+row 134 col -13 val 0
+tsx
+row -5 col 882 val 0
+tsx
+row 134 col -13 val 0
+tsx
+row -5 col 927 val 0
+tsx
+row 134 col -13 val 0
+tsx
+row -5 col 972 val 0
+tsx
+row 134 col -13 val 0
+tsx
+row -5 col 1017 val 0
+tsx
+row 134 col -13 val 0
+tsx
+row -5 col 1062 val 0
+tsx
+row 134 col -13 val 0
+tsx
+row -5 col 1107 val 0
+tsx
+row 134 col -13 val 0
+tsx
+row -5 col 1152 val 0
+tsx
+row 134 col -13 val 0
+tsx
+row -5 col 1197 val 0
+tsx
+row 134 col -13 val 0
+tsx
+row -5 col 1242 val 0
+tsx
+row 134 col -13 val 0
+tsx
+row -5 col 1287 val 0
+tsx
+row 134 col -13 val 0
+tsx
+row -5 col 1332 val 0
+tsx
+row 134 col -13 val 0
+tsx
+row -5 col 1377 val 0
+tsx
+row 134 col -13 val 0
+tsx
+row -5 col 1422 val 0
+tsx
+row 134 col -13 val 0
+tsx
+row -5 col 1467 val 0
+tsx
+row 134 col -13 val 0
+tsx
+row -5 col 1512 val 0
+tsx
+row 134 col -13 val 0
+tsx
+row -5 col 1557 val 0
+tsx
+row 134 col -13 val 0
+tsx
+row -5 col 1602 val 0
+tsx
+row 134 col -13 val 0
+tsx
+row -5 col 1647 val 0
+tsx
+row 134 col -13 val 0
+tsx
+row -5 col 1692 val 0
+tsx
+row 134 col -13 val 0
+tsx
+row -5 col 1737 val 0
+tsx
+row 134 col -13 val 0
+tsx
+row -5 col 1782 val 0
+tsx
+row 134 col -13 val 0
+tsx
+row -5 col 1827 val 0
+tsx
+row 134 col -13 val 0
+tsx
+row -5 col 1872 val 0
+tsx
+row 134 col -13 val 0
+tsx
+row -5 col 1917 val 0
+tsx
+row 134 col -13 val 0
+tsx
+row -5 col 1962 val 0
+tsx
+row 134 col -13 val 0
+tsx
+row -5 col 2007 val 0
+tsx
+row 139 col -13 val 0
+tsx
+row -5 col 269 val 0
+tsx
+row 139 col -13 val 0
+tsx
+row -5 col 314 val 0
+tsx
+row 139 col -13 val 0
+tsx
+row -5 col 359 val 0
+tsx
+row 139 col -13 val 0
+tsx
+row -5 col 404 val 0
+tsx
+row 139 col -13 val 0
+tsx
+row -5 col 449 val 0
+tsx
+row 139 col -13 val 0
+tsx
+row -5 col 494 val 0
+tsx
+row 139 col -13 val 0
+tsx
+row -5 col 539 val 0
+tsx
+row 139 col -13 val 0
+tsx
+row -5 col 584 val 0
+tsx
+row 139 col -13 val 0
+tsx
+row -5 col 629 val 0
+tsx
+row 139 col -13 val 0
+tsx
+row -5 col 674 val 0
+tsx
+row 139 col -13 val 0
+tsx
+row -5 col 719 val 0
+tsx
+row 139 col -13 val 0
+tsx
+row -5 col 764 val 0
+tsx
+row 139 col -13 val 0
+tsx
+row -5 col 809 val 0
+tsx
+row 139 col -13 val 0
+tsx
+row -5 col 854 val 0
+tsx
+row 139 col -13 val 0
+tsx
+row -5 col 899 val 0
+tsx
+row 139 col -13 val 0
+tsx
+row -5 col 944 val 0
+tsx
+row 139 col -13 val 0
+tsx
+row -5 col 989 val 0
+tsx
+row 139 col -13 val 0
+tsx
+row -5 col 1034 val 0
+tsx
+row 139 col -13 val 0
+tsx
+row -5 col 1079 val 0
+tsx
+row 139 col -13 val 0
+tsx
+row -5 col 1124 val 0
+tsx
+row 139 col -13 val 0
+tsx
+row -5 col 1169 val 0
+tsx
+row 139 col -13 val 0
+tsx
+row -5 col 1214 val 0
+tsx
+row 139 col -13 val 0
+tsx
+row -5 col 1259 val 0
+tsx
+row 139 col -13 val 0
+tsx
+row -5 col 1304 val 0
+tsx
+row 139 col -13 val 0
+tsx
+row -5 col 1349 val 0
+tsx
+row 139 col -13 val 0
+tsx
+row -5 col 1394 val 0
+tsx
+row 139 col -13 val 0
+tsx
+row -5 col 1439 val 0
+tsx
+row 139 col -13 val 0
+tsx
+row -5 col 1484 val 0
+tsx
+row 139 col -13 val 0
+tsx
+row -5 col 1529 val 0
+tsx
+row 139 col -13 val 0
+tsx
+row -5 col 1574 val 0
+tsx
+row 139 col -13 val 0
+tsx
+row -5 col 1619 val 0
+tsx
+row 139 col -13 val 0
+tsx
+row -5 col 1664 val 0
+tsx
+row 139 col -13 val 0
+tsx
+row -5 col 1709 val 0
+tsx
+row 139 col -13 val 0
+tsx
+row -5 col 1754 val 0
+tsx
+row 139 col -13 val 0
+tsx
+row -5 col 1799 val 0
+tsx
+row 139 col -13 val 0
+tsx
+row -5 col 1844 val 0
+tsx
+row 139 col -13 val 0
+tsx
+row -5 col 1889 val 0
+tsx
+row 139 col -13 val 0
+tsx
+row -5 col 1934 val 0
+tsx
+row 139 col -13 val 0
+tsx
+row -5 col 1979 val 0
+tsx
+row 139 col -13 val 0
+tsx
+row -5 col 2024 val 0
+tsx
+round 1   (   Fast   ):  425 del cols,   20 del rows,  200 chg bounds,    0 chg sides,    0 chg coeffs,  400 tsx applied,    0 tsx conflicts
+activating delayed presolvers
+round 3   (  Final   ):  425 del cols,   20 del rows,  200 chg bounds,    0 chg sides,    0 chg coeffs,  400 tsx applied,    0 tsx conflicts
+
+          presolver     nb calls   success calls(%)    nb transactions     tsx applied(%)  execution time(s) 
+       colsingleton            3                0.0                  0                0.0              0.000
+    coefftightening            3                0.0                  0                0.0              0.001
+        propagation            3               33.3                400              100.0              0.001
+      fixcontinuous            0                0.0                  0                0.0              0.000
+      simpleprobing            1                0.0                  0                0.0              0.000
+       parallelrows            1                0.0                  0                0.0              0.000
+       parallelcols            1                0.0                  0                0.0              0.000
+           stuffing            1                0.0                  0                0.0              0.000
+            dualfix            1                0.0                  0                0.0              0.000
+       simplifyineq            1                0.0                  0                0.0              0.000
+        doubletoneq            1                0.0                  0                0.0              0.000
+      cliquemerging            0                0.0                  0                0.0              0.000
+            implint            0                0.0                  0                0.0              0.000
+             domcol            1                0.0                  0                0.0              0.001
+          dualinfer            0                0.0                  0                0.0              0.000
+            probing            1                0.0                  0                0.0              0.002
+       substitution            1                0.0                  0                0.0              0.000
+           sparsify            1                0.0                  0                0.0              0.000
+
+reduced problem:
+  reduced rows:     210
+  reduced columns:  1600
+  reduced int. columns:  1600
+  reduced cont. columns:  0
+  reduced nonzeros: 9600
+
+presolving finished after 0.006 seconds
+
+reduced problem written to 10teams_reduced.mps in 0.007 seconds
+
+postsolve archive written to 10teams_reduced.postsolve in 0.001 seconds
+
