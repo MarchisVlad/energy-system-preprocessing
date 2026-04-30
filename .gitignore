@@ -13,6 +13,10 @@ src/solvers/utils/PIPS-IPMpp/ma27-1.0.0.tar.gz
 
 # Ignore model utils
 src/utils/detection_annotation
+src/utils/pipstools_detection
 models/sources/simple-methods
+
+# Models
+models/
 
 .vscode

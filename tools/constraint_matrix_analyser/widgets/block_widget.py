@@ -103,8 +103,13 @@ class BlockMatrixWidget(QWidget):
         self.matrix_shape = A.shape
         rows, cols = A.shape
 
+        if A.size == 0:
+            self.image_item.clear()
+            return
+
         # Invert the colormap for black-on-white appearance
-        inverted_A = np.max(A) - A
+        a_max = np.max(A)
+        inverted_A = a_max - A
 
         self.image_item.setImage(inverted_A.T, autoLevels=True)
 

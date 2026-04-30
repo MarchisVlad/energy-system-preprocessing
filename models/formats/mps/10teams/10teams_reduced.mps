@@ -4,7 +4,7 @@
 *NONZERO:      10800
 *
 *
-NAME          models/formats/mps/10teams/10teams.mps
+NAME          /homes/vm922/energy-system-preprocessing/models/formats/mps/10teams/10teams.mps
 ROWS
  N  OBJ
  L  c1

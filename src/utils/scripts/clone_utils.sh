@@ -13,6 +13,7 @@ SOLVERS_DIR="$(cd "$SOLVERS_DIR" && pwd)"
 # "repo_url|clone_folder_name"
 REPOS=(
     "https://gitlab.com/pips-ipmpp/detection-annotation|detection_annotation"
+    "https://gitlab.com/pips-ipmpp/pipstools|pipstools_detection"
 )
 
 echo "Cloning into: $SOLVERS_DIR"

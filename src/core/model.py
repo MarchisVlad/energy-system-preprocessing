@@ -116,6 +116,9 @@ class FileFormat(Enum):
     GDXJacobian = "jacobian.gdx"
     """GDX file with model data incl. Jacobian and Hessian evaluated at current point."""
 
+    GDXUnload = "execute_unload.gdx"
+    """GDX file from unload execution prior to solve"""
+
     @classmethod
     def values(cls):
         """Convenience function to return all values of enum"""
@@ -199,6 +202,8 @@ class Model:
                     format = FileFormat.CPLEXMPS
                 elif self.path.endswith(".lp"):
                     format = FileFormat.CPLEXLP
+                elif self.path.endswith(".gdx"):
+                    format = FileFormat.GDXUnload
                 else:
                     raise ValueError(
                         "File format must be specified when loading from path")
@@ -208,7 +213,11 @@ class Model:
                 with _suppress_stdout():
                     self.model.read(path=self.path)
 
-            elif format is None:
+            elif format == FileFormat.GDXUnload:
+                from src.core.simple_gdx import simple_model_from_gdx
+                self.model = simple_model_from_gdx(self.path)
+
+            else:
                 # TODO: Handle initialisation for other formats.
                 pass
 
@@ -219,6 +228,14 @@ class Model:
             lo, up = self._extract_bounds()
             self._lo = lo
             self._up = up
+
+    @property
+    def container(self) -> gp.Container:
+        if not hasattr(self, "_container") or self._container is None:
+            raise AttributeError(
+                "No GDX container loaded. Initialise with FileFormat.GDXUnload."
+            )
+        return self._container
 
     @property
     def A(self, without_objective=False) -> sp.spmatrix:
@@ -293,7 +310,8 @@ class Model:
                                    gp.FileFormat.FixedMPS,
                                    options=options)
                 self.model = mip.Model()
-                self.model.read(path=str(Path(tempdir) / "fixed.MPS"))
+                self.model.read(
+                    path=str(Path(tempdir) / gp.FileFormat.FixedMPS.value))
                 self._A = self._extract_matrix()
         else:
             # TODO: implement conversions to other available types.
@@ -329,8 +347,27 @@ class Model:
             return sp.coo_matrix((data, (rows, cols)), shape=(n_rows, n_cols))
 
         elif isinstance(self.model, gp.Model):
-            # TODO: Matrix extraction for GMS formats.
-            pass
+            # Convert to MPS in a temp dir to extract the matrix without
+            # mutating self.model (which must stay as gp.Model).
+            with tempfile.TemporaryDirectory() as tempdir:
+                options = gp.ConvertOptions(GAMSObjVar="obj")
+                self.model.convert(tempdir,
+                                   gp.FileFormat.FixedMPS,
+                                   options=options)
+                tmp = mip.Model()
+                with _suppress_stdout():
+                    tmp.read(
+                        path=str(Path(tempdir) / gp.FileFormat.FixedMPS.value))
+                n_rows = len(tmp.constrs)
+                n_cols = len(tmp.vars)
+                data, rows, cols = [], [], []
+                for i, constr in enumerate(tmp.constrs):
+                    for var, coeff in constr.expr.expr.items():
+                        rows.append(i)
+                        cols.append(var.idx)
+                        data.append(1 if coeff != 0 else 0)
+                return sp.coo_matrix((data, (rows, cols)),
+                                     shape=(n_rows, n_cols))
 
         raise TypeError(f"Unsupported model type: {type(self.model)!r}")
 
