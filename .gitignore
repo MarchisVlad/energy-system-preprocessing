@@ -4,6 +4,9 @@ src/presolvers/papilo
 # Ignore solvers
 src/solvers/PIPS-IPMpp
 
+# Ignore detection tools
+src/detection/pipstools
+
 # Ignore licensed utils
 src/solvers/utils/PIPS-IPMpp/ma27-1.0.0.tar.gz
 
