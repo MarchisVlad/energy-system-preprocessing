@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "energy-system-preprocessing"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = [
+    "scipy",
+    "numpy",
+    "matplotlib",
+    "networkx",
+    "scikit-learn",
+    "mip",
+    "polars",
+    # gamspy must be installed separately (requires GAMS licence)
+    # metis must be installed separately (system library)
+    # PyQt6 must be installed separately (for the UI)
+]
+
+[project.scripts]
+esp = "cli.main:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["src*", "cli*", "tools*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

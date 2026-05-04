@@ -1,1 +1,0 @@
-[Introduce the user to the 10 teams problem and why it might be relevant.]

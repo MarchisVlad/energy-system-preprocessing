@@ -1,0 +1,2 @@
+[console_scripts]
+esp = cli.main:main

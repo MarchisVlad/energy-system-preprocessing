@@ -1,25 +1,24 @@
-# Ignore presolvers
+# Git submodules (not tracked)
 src/presolvers/papilo
-
-# Ignore solvers
 src/solvers/PIPS-IPMpp
-
-# Ignore detection tools
 src/detection/pipstools
-
-# Ignore licensed utils
-src/solvers/utils/PIPS-IPMpp/ma27-1.0.0.tar.gz
-
-# Ignore python caches
-*__pycache__
-*ipynb_checkpoints
-
-# Ignore model utils
-src/utils/detection_annotation
-src/utils/pipstools_detection
+src/generation/simple-methods
 models/sources/simple-methods
 
-# Models
-models/
+# Licensed utils
+src/solvers/utils/PIPS-IPMpp/ma27-1.0.0.tar.gz
+
+# Model data (stored locally, not in repo)
+data/
+
+# Model format conversions (derived artifacts)
+models/formats/
+models/sources/GAMS/
+models/sources/MIPLIB/
+
+# Python caches
+**/__pycache__
+**/*.pyc
+**/.ipynb_checkpoints
 
 .vscode

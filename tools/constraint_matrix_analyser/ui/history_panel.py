@@ -14,8 +14,7 @@ from PyQt6.QtWidgets import (
 )
 
 from src.core.presolving import Presolver, PresolvingMethod
-from src.presolvers.algorithm import presolve as python_presolve
-from src.presolvers.papilo_handler import presolve as papilo_presolve
+from src.utils.presolve_handler import PresolveHandler
 
 from ..widgets.history_tab import HistoryTab
 
@@ -95,9 +94,11 @@ class HistoryPanel(QGroupBox):
 
             method = PresolvingMethod[self.preprocessing_techniques.currentText()]
             presolver = Presolver[self.presolver_selector.currentText()]
-            _presolve = papilo_presolve if presolver == Presolver.PaPILO else python_presolve
-
-            model = _presolve(model=model, method=method)
+            model = PresolveHandler().presolve(
+                model=model,
+                presolver=presolver,
+                method=method,
+            )
 
             # Add new state
             self.app.model_history.add_state(method, model)

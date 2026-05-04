@@ -4,7 +4,7 @@ import mip
 import pytest
 
 from src.core.model import Model
-from src.presolvers.techniques.constraint_propagation import ConstraintPropagation
+from src.presolvers.static.constraint_propagation import ConstraintPropagation
 
 
 # ---------------------------------------------------------------------------
@@ -13,7 +13,9 @@ from src.presolvers.techniques.constraint_propagation import ConstraintPropagati
 
 def _make_cp(model: mip.Model) -> ConstraintPropagation:
     wrapper = Model(model=model, path=None)
-    return ConstraintPropagation(wrapper)
+    algo = ConstraintPropagation()
+    algo.mip = model  # wire up directly so .presolve() works
+    return algo
 
 
 # ---------------------------------------------------------------------------
@@ -241,8 +243,9 @@ def test_matrix_updated_after_tightening():
     m.add_constr(x + y <= 3)
 
     wrapper = Model(model=m, path=None)
-    cp = ConstraintPropagation(wrapper)
-    cp.presolve()
+    cp = ConstraintPropagation()
+    cp._run(wrapper)
+    wrapper.update_matrix()
 
     # The matrix should reflect the constraint structure (1 row, 2 cols)
     assert wrapper.A.shape == (1, 2)

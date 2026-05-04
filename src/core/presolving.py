@@ -23,6 +23,8 @@ class PresolvingMethod(Enum):
     ImplInt = 14
     Probing = 15
     Sparsify = 16
+    CliqueMerging = 17
+    Substitution = 18
 
 
 class PresolveStatus(Enum):

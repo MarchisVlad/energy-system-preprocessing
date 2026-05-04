@@ -8,7 +8,7 @@ import pytest
 _MIP_INF = sys.float_info.max
 
 from src.core.model import Model
-from src.presolvers.techniques.dual_fix import DualFix
+from src.presolvers.static.dual_fix import DualFix
 
 
 # ---------------------------------------------------------------------------
@@ -16,8 +16,9 @@ from src.presolvers.techniques.dual_fix import DualFix
 # ---------------------------------------------------------------------------
 
 def _make_df(model: mip.Model) -> DualFix:
-    wrapper = Model(model=model, path=None)
-    return DualFix(wrapper)
+    algo = DualFix()
+    algo.mip = model  # wire up directly so .presolve() works
+    return algo
 
 
 def _minimise(vars_: list, obj_coeffs: list) -> mip.Model:

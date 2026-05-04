@@ -2,7 +2,7 @@ import mip
 import pytest
 
 from src.core.model import Model
-from src.presolvers.techniques.fix_continuous import FixContinuous
+from src.presolvers.static.fix_continuous import FixContinuous
 
 
 # ---------------------------------------------------------------------------
@@ -10,8 +10,9 @@ from src.presolvers.techniques.fix_continuous import FixContinuous
 # ---------------------------------------------------------------------------
 
 def _make_fc(model: mip.Model) -> FixContinuous:
-    wrapper = Model(model=model, path=None)
-    return FixContinuous(wrapper)
+    algo = FixContinuous()
+    algo.mip = model  # wire up directly so .presolve() works
+    return algo
 
 
 # ---------------------------------------------------------------------------

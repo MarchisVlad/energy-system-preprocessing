@@ -1,1 +1,0 @@
-Contains results from the experiment runs as well as images of the block-structured matrices.
