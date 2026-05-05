@@ -1,4 +1,5 @@
 """esp generate — compile a SIMPLE-methods GAMS model to MPS."""
+
 from __future__ import annotations
 
 import argparse
@@ -6,14 +7,32 @@ from pathlib import Path
 
 
 def add_subcommand(subparsers) -> None:
-    p = subparsers.add_parser("generate", help="Generate an MPS model from a SIMPLE-methods source.")
-    p.add_argument("--name", required=True, help="Model name (used as the output folder name).")
-    p.add_argument("--output", default=None, help="Output root directory (default: data/models/).")
-    p.add_argument("--resolution", type=int, default=8, help="RESOLUTION parameter (default: 8).")
-    p.add_argument("--from-period", type=int, default=None, dest="from_period", help="FROM parameter.")
-    p.add_argument("--to-period", type=int, default=None, dest="to_period", help="TO parameter.")
+    p = subparsers.add_parser(
+        "generate", help="Generate an MPS model from a SIMPLE-methods source."
+    )
+    p.add_argument(
+        "--name", required=True, help="Model name (used as the output folder name)."
+    )
+    p.add_argument(
+        "--output", default=None, help="Output root directory (default: data/models/)."
+    )
+    p.add_argument(
+        "--resolution", type=float, default=8, help="RESOLUTION parameter (default: 8)."
+    )
+    p.add_argument(
+        "--from-period",
+        type=float,
+        default=None,
+        dest="from_period",
+        help="FROM parameter.",
+    )
+    p.add_argument(
+        "--to-period", type=float, default=None, dest="to_period", help="TO parameter."
+    )
     p.add_argument("--regions", type=int, default=None, help="NBREGIONS parameter.")
-    p.add_argument("--method", default=None, help="METHOD parameter (SIMPLE model variant).")
+    p.add_argument(
+        "--method", default=None, help="METHOD parameter (SIMPLE model variant)."
+    )
     p.add_argument(
         "--simple-root",
         default=None,
