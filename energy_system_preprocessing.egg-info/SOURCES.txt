@@ -48,7 +48,6 @@ src/detection/pipstools/src/pipstools/io/parquet.py
 src/detection/pipstools/testing/test_pipstools.py
 src/generation/__init__.py
 src/generation/simple_gdx.py
-src/generation/simple_wrapper.py
 src/presolvers/__init__.py
 src/presolvers/base.py
 src/presolvers/papilo.py
@@ -82,6 +81,7 @@ src/utils/anops/score.py
 src/utils/plotting/Plotter.py
 tools/__init__.py
 tools/config.py
+tools/parse_papilo_log.py
 tools/constraint_matrix_analyser/app.py
 tools/constraint_matrix_analyser/ui/__init__.py
 tools/constraint_matrix_analyser/ui/browser_panel.py

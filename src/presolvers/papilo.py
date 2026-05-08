@@ -86,7 +86,7 @@ class PaPILO(PresolvingAlgorithm):
             # Disable every presolver except the ones requested, and cap to 1 round.
             enabled_names = {_METHOD_TO_PAPILO_NAME[m] for m in self._methods}
             disabled = _ALL_PAPILO_PRESOLVERS - enabled_names
-            settings_lines = [f"{name}.enabled = false" for name in sorted(disabled)]
+            settings_lines = [f"{name}.enabled = 0" for name in sorted(disabled)]
             settings_lines.append("presolve.maxrounds = 1")
             tf = tempfile.NamedTemporaryFile(mode="w", suffix=".set", delete=False)
             tf.write("\n".join(settings_lines) + "\n")

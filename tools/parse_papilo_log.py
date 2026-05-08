@@ -171,9 +171,51 @@ def esp_command(rounds: list[Round], model_path: str | None) -> str:
     return f"esp presolve --model {model_arg} --method {methods}"
 
 
+def to_metadata(rounds: list[Round], model_path: str | None) -> dict:
+    last = rounds[-1].cumulative if rounds else Deltas(0, 0, 0, 0, 0, 0, 0)
+    return {
+        "papilo": {
+            "model_path": model_path,
+            "n_rounds": len(rounds),
+            "total": vars(last),
+            "presolver_sequence": [p for r in rounds for p in r.presolvers],
+            "rounds": [
+                {
+                    "number": r.number,
+                    "kind": r.kind,
+                    "presolvers": r.presolvers,
+                    "delta": vars(r.delta),
+                }
+                for r in rounds
+            ],
+        }
+    }
+
+
+def save_metadata(meta: dict, output_dir: str) -> None:
+    import json
+    from pathlib import Path
+
+    path = Path(output_dir) / "metadata.json"
+    existing: dict = {}
+    if path.exists():
+        existing = json.loads(path.read_text())
+    existing.update(meta)
+    path.write_text(json.dumps(existing, indent=2))
+    print(f"Metadata written to {path}")
+
+
 def main() -> None:
-    if len(sys.argv) > 1:
-        with open(sys.argv[1]) as f:
+    import argparse
+
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("log", nargs="?", help="PaPILO log file (default: stdin).")
+    parser.add_argument("--output", "-o", default=None, metavar="DIR",
+                        help="Directory to write/merge metadata.json into.")
+    args = parser.parse_args()
+
+    if args.log:
+        with open(args.log) as f:
             lines = f.readlines()
     else:
         lines = sys.stdin.readlines()
@@ -193,6 +235,9 @@ def main() -> None:
     print()
     print("esp command:")
     print(f"  {esp_command(rounds, model_path)}")
+
+    if args.output:
+        save_metadata(to_metadata(rounds, model_path), args.output)
 
 
 if __name__ == "__main__":
