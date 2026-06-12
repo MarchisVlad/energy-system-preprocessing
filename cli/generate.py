@@ -39,6 +39,22 @@ def add_subcommand(subparsers) -> None:
         dest="simple_root",
         help="Path to a SIMPLE-methods checkout (default: uses src/config.py).",
     )
+    p.add_argument(
+        "--integers",
+        action="store_true",
+        default=False,
+        help="Generate a MIP model with integer investment variables (uses simple_mip.gms).",
+    )
+    p.add_argument(
+        "--cap-fraction",
+        type=float,
+        default=None,
+        dest="cap_fraction",
+        help=(
+            "CAP_FRACTION: scale existing plant capacity by this factor (0 < f ≤ 1). "
+            "Values below 1 force capacity expansion. Default: 1.0 (no reduction)."
+        ),
+    )
     p.set_defaults(func=run)
 
 
@@ -82,6 +98,8 @@ def run(args: argparse.Namespace) -> int:
         double_dash.append(f"--NBREGIONS={args.regions}")
     if args.method is not None:
         double_dash.append(f"--METHOD={args.method}")
+    if args.cap_fraction is not None:
+        double_dash.append(f"--CAP_FRACTION={args.cap_fraction}")
 
     with tempfile.TemporaryDirectory(prefix="esp_generate_") as tmpdir:
         tmp = Path(tmpdir)
@@ -89,7 +107,9 @@ def run(args: argparse.Namespace) -> int:
 
         (tmp / "convert.opt").write_text(f"CplexMPS {mps_tmp.as_posix()}\n")
 
-        cmd = [gams_exe, "simple.gms", "lp=convert", f"optDir={tmpdir}"] + double_dash
+        gms_file = "simple_mip.gms" if args.integers else "simple.gms"
+        solver_arg = "mip=convert" if args.integers else "lp=convert"
+        cmd = [gams_exe, gms_file, solver_arg, f"optDir={tmpdir}"] + double_dash
         print(f"Generating '{args.name}': {' '.join(cmd)}")
         result = subprocess.run(cmd, cwd=simple_root)
 
