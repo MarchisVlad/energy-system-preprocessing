@@ -26,6 +26,7 @@ class BlockStructure:
     A: sp.coo_matrix = None
     row_permutation: Optional[np.ndarray] = None
     col_permutation: Optional[np.ndarray] = None
+    metadata: Dict[str, Any] = field(default_factory=dict)
 
     # Geometry helpers
     def boundaries(self):

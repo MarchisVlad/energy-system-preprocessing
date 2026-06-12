@@ -152,7 +152,7 @@ def _compute_scores(
 
     block_area = (
         row_count_by_part.join(col_count_by_part, on="partition", how="left")
-        .with_columns(pl.col("cols").fill_null(pl.first("cols")))
+        .with_columns(pl.col("cols").fill_null(0))
         .with_columns(area=pl.col("rows") * pl.col("cols"))["area"]
         .sum()
     )
@@ -167,7 +167,7 @@ def _compute_scores(
         .select("col")
         .join(A, on="col")
         .select("row", "col")
-        .join(cols.with_row_index("row"), on="row")
+        .join(rows.with_row_index("row"), on="row")
         .select("col", "partition")
         .group_by("col")
         .n_unique()
@@ -195,7 +195,8 @@ def _compute_scores(
         twolinks = (
             colparts_per_row.filter(pl.col("partition").list.len() == 2)
             .with_columns(
-                (pl.col("partition").list.first() - pl.col("partition").list.last()).abs()
+                (pl.col("partition").list.first().cast(pl.Int64)
+                 - pl.col("partition").list.last().cast(pl.Int64)).abs()
             )
             .filter(pl.col("partition") < 2)
         )

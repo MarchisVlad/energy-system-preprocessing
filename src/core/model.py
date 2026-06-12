@@ -206,18 +206,12 @@ class Model:
                     format = FileFormat.GDXUnload
                 else:
                     raise ValueError(
-                        "File format must be specified when loading from path"
-                    )
+                        "File format must be specified when loading from path")
 
             if format == FileFormat.CPLEXMPS:
                 self.model = mip.Model()
                 with _suppress_stdout():
                     self.model.read(path=self.path)
-
-            elif format == FileFormat.GDXUnload:
-                from src.generation.simple_gdx import simple_model_from_gdx
-
-                self.model = simple_model_from_gdx(self.path)
 
             else:
                 # TODO: Handle initialisation for other formats.
@@ -291,13 +285,11 @@ class Model:
             raise RuntimeError(
                 "Attempted to convert a model but the "
                 "self.model attribute is not set. Probably caused by "
-                "initialisation with just the matrix component."
-            )
+                "initialisation with just the matrix component.")
 
         if isinstance(self.model, type):
-            warnings.warn(
-                f"Model is already in the desired format: {type}", UserWarning
-            )
+            warnings.warn(f"Model is already in the desired format: {type}",
+                          UserWarning)
 
         conversion_map = {
             mip.Model: lambda m: m._to_mip(),
@@ -310,9 +302,12 @@ class Model:
         if isinstance(self.model, gp.Model):
             with tempfile.TemporaryDirectory() as tempdir:
                 options = gp.ConvertOptions(GAMSObjVar="obj")
-                self.model.convert(tempdir, gp.FileFormat.FixedMPS, options=options)
+                self.model.convert(tempdir,
+                                   gp.FileFormat.FixedMPS,
+                                   options=options)
                 self.model = mip.Model()
-                self.model.read(path=str(Path(tempdir) / gp.FileFormat.FixedMPS.value))
+                self.model.read(
+                    path=str(Path(tempdir) / gp.FileFormat.FixedMPS.value))
                 self._A = self._extract_matrix()
         else:
             # TODO: implement conversions to other available types.
@@ -352,10 +347,13 @@ class Model:
             # mutating self.model (which must stay as gp.Model).
             with tempfile.TemporaryDirectory() as tempdir:
                 options = gp.ConvertOptions(GAMSObjVar="obj")
-                self.model.convert(tempdir, gp.FileFormat.FixedMPS, options=options)
+                self.model.convert(tempdir,
+                                   gp.FileFormat.FixedMPS,
+                                   options=options)
                 tmp = mip.Model()
                 with _suppress_stdout():
-                    tmp.read(path=str(Path(tempdir) / gp.FileFormat.FixedMPS.value))
+                    tmp.read(
+                        path=str(Path(tempdir) / gp.FileFormat.FixedMPS.value))
                 n_rows = len(tmp.constrs)
                 n_cols = len(tmp.vars)
                 data, rows, cols = [], [], []
@@ -364,7 +362,8 @@ class Model:
                         rows.append(i)
                         cols.append(var.idx)
                         data.append(1 if coeff != 0 else 0)
-                return sp.coo_matrix((data, (rows, cols)), shape=(n_rows, n_cols))
+                return sp.coo_matrix((data, (rows, cols)),
+                                     shape=(n_rows, n_cols))
 
         raise TypeError(f"Unsupported model type: {type(self.model)!r}")
 
@@ -380,10 +379,8 @@ class Model:
         """
         if isinstance(self.model, mip.Model):
             return np.fromiter(
-                (
-                    1 if var.var_type in (mip.BINARY, mip.INTEGER) else 0
-                    for var in self.model.vars
-                ),
+                (1 if var.var_type in (mip.BINARY, mip.INTEGER) else 0
+                 for var in self.model.vars),
                 dtype=np.int8,
                 count=len(self.model.vars),
             )
@@ -395,7 +392,8 @@ class Model:
             integer_like = {"binary", "integer", "semiint"}
 
             return np.fromiter(
-                (1 if str(var.type).lower() in integer_like else 0 for var in vars_),
+                (1 if str(var.type).lower() in integer_like else 0
+                 for var in vars_),
                 dtype=np.int8,
                 count=len(vars_),
             )
@@ -502,11 +500,12 @@ class ModelHistory:
         -------
             A `ModelHistory` object.
         """
-        self.states: list[Tuple[Optional[PresolvingMethod], Model]] = [(None, model)]
+        self.states: list[Tuple[Optional[PresolvingMethod],
+                                Model]] = [(None, model)]
         self.current_index: int = len(self.states) - 1
 
     def add_state(self, step: Optional[PresolvingMethod], model: Model):
-        self.states = self.states[: self.current_index + 1]
+        self.states = self.states[:self.current_index + 1]
         self.states.append((step, model))
         self.current_index = len(self.states) - 1
 
