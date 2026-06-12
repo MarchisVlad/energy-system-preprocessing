@@ -3,7 +3,6 @@ from typing import List
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QComboBox,
-    QDoubleSpinBox,
     QGroupBox,
     QHBoxLayout,
     QLabel,
@@ -14,9 +13,13 @@ from PyQt6.QtWidgets import (
 )
 
 from src.core.presolving import Presolver, PresolvingMethod
-from src.utils.presolve_handler import PresolveHandler
+from src.utils.presolve_handler import PresolveHandler, _STATIC_ALGORITHM_MAP
 
 from ..widgets.history_tab import HistoryTab
+
+# PaPILO supports every PresolvingMethod; static only supports those in the map.
+_PAPILO_METHODS = list(PresolvingMethod)
+_STATIC_METHODS = list(_STATIC_ALGORITHM_MAP.keys())
 
 
 class HistoryPanel(QGroupBox):
@@ -51,61 +54,59 @@ class HistoryPanel(QGroupBox):
         self.presolver_selector = QComboBox()
         for p in Presolver:
             self.presolver_selector.addItem(p.name)
+        self.presolver_selector.currentIndexChanged.connect(self._on_presolver_changed)
         controls.addWidget(self.presolver_selector)
 
         controls.addWidget(QLabel("Technique:"))
         self.preprocessing_techniques = QComboBox()
-        for method in PresolvingMethod:
-            self.preprocessing_techniques.addItem(method.name)
         controls.addWidget(self.preprocessing_techniques)
 
         self.apply_preprocessing_button = QPushButton("Apply")
         self.apply_preprocessing_button.clicked.connect(self.apply_preprocessing)
         controls.addWidget(self.apply_preprocessing_button)
 
-        # self.normalize_btn = QPushButton("Normalize")
-        # self.scale_btn = QPushButton("Scale")
-        # self.remove_redundant_btn = QPushButton("Remove Redundant")
-
-        # # TODO: connect preprocessing
-        # controls.addWidget(self.normalize_btn)
-        # controls.addWidget(self.scale_btn)
-        # controls.addWidget(self.remove_redundant_btn)
-
-        # controls.addWidget(QLabel("Tolerance:"))
-        # self.tolerance = QDoubleSpinBox()
-        # self.tolerance.setRange(0.0001, 1.0)
-        # self.tolerance.setValue(0.001)
-        # self.tolerance.setDecimals(4)
-        # controls.addWidget(self.tolerance)
-
         controls.addStretch()
         layout.addLayout(controls)
+
+        # Populate technique list for the default presolver selection.
+        self._on_presolver_changed(0)
+
+    def _on_presolver_changed(self, _index: int):
+        presolver = Presolver[self.presolver_selector.currentText()]
+        methods = _PAPILO_METHODS if presolver == Presolver.PaPILO else _STATIC_METHODS
+
+        self.preprocessing_techniques.blockSignals(True)
+        self.preprocessing_techniques.clear()
+        for m in methods:
+            self.preprocessing_techniques.addItem(m.name)
+        self.preprocessing_techniques.blockSignals(False)
 
     def apply_preprocessing(self):
         if not self.app.model_history:
             print("No model loaded!")
             return
 
-        # Generate new matrix info (placeholder - simulate changes)
         current_state = self.app.model_history.get_current_state()
-        if current_state:
-            _, model = current_state
+        if not current_state:
+            return
 
-            method = PresolvingMethod[self.preprocessing_techniques.currentText()]
-            presolver = Presolver[self.presolver_selector.currentText()]
-            model = PresolveHandler().presolve(
-                model=model,
-                presolver=presolver,
-                method=method,
-            )
+        _, model = current_state
 
-            # Add new state
-            self.app.model_history.add_state(method, model)
-            self.update_history()
-            self.app.update_matrix_display()
+        method = PresolvingMethod[self.preprocessing_techniques.currentText()]
+        presolver = Presolver[self.presolver_selector.currentText()]
 
+        step = len(self.app.model_history.states)
+        model = PresolveHandler.presolve(
+            model=model,
+            presolver=presolver,
+            method=method,
+            temp_dir=self.app.work_path,
+            step=step,
+        )
+
+        self.app.model_history.add_state(method, model)
         self.update_history()
+        self.app.update_matrix_display()
 
     def update_history(self):
         for tab in self.tabs:

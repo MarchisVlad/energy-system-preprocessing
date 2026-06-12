@@ -4,7 +4,7 @@ set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-SOLVERS_DIR="$SCRIPT_DIR/.."
+SOLVERS_DIR="$SCRIPT_DIR/../src/solvers"
 
 mkdir -p "$SOLVERS_DIR"
 

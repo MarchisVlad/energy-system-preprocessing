@@ -1,8 +1,11 @@
 import os
+import tempfile
+from pathlib import Path
 from typing import Optional
 
 from PyQt6.QtCore import Qt
-from PyQt6.QtWidgets import QApplication, QMainWindow, QSplitter, QVBoxLayout, QWidget
+from PyQt6.QtWidgets import (QApplication, QMainWindow, QSplitter, QVBoxLayout,
+                             QWidget)
 
 from src.core.model import Model, ModelHistory
 
@@ -20,6 +23,10 @@ class ConstraintMatrixAnalyzer(QMainWindow):
         self.home_directory = str(STARTUP_ROOT.absolute())
         self.current_directory = self.home_directory
         self.model_history: Optional[ModelHistory] = None
+
+        # Temp directory lives for the entire PyQt session; cleaned up on exit.
+        self._work_dir = tempfile.TemporaryDirectory(prefix="cma_")
+        self.work_path = Path(self._work_dir.name)
 
         self._init_ui()
 
