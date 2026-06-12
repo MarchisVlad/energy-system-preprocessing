@@ -1,7 +1,0 @@
-scipy
-numpy
-matplotlib
-networkx
-scikit-learn
-mip
-polars

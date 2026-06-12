@@ -22,3 +22,4 @@ models/sources/MIPLIB/
 **/.ipynb_checkpoints
 
 .vscode
+*.egg-info/

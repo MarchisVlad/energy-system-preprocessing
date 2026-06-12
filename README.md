@@ -58,15 +58,12 @@ energy-system-preprocessing/
 │   ├── store/              # File-based model store and matrix cache
 │   ├── utils/              # Presolve/solve handlers, annotation ops, plotting
 │   └── config.py           # Paths: data root, external tool binaries
-├── tools/                  # PyQt6 constraint-matrix analyser GUI, PaPILO log parser,
-│                           #  metadata generation
+├── tools/                  # PyQt6 constraint-matrix analyser GUI, PaPILO log parser
 ├── experiments/            # Jupyter notebooks: setup, presolve, detection, annotation,
 │                           #  scoring, solving
 ├── models/                 # Model format helpers and external sources (MIPLIB, GAMS)
 ├── resources/              # Install scripts: Boost, PaPILO, PIPS-IPMpp, pipstools
-├── tests/                  # pytest suites (core, detection, presolvers, reordering)
-└── data/                   # Small local artefacts; the model store lives at
-                            #  /data/energy-system-preprocessing (see src/config.py)
+└── tests/                  # pytest suites (core, presolvers, reordering)
 ```
 
 ## Installation
